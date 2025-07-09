@@ -4,10 +4,10 @@ function generate_pdf()
 	$mpath = drupal_get_path('module', 'science_and_concept_map');
 	require($mpath . '/pdf/fpdf/fpdf.php');
 	require($mpath . '/pdf/phpqrcode/qrlib.php');
-	global $user;
+	$user = \Drupal::currentUser();
 	$x                 = $user->uid;
 	$proposal_id       = arg(3);
-	$query3 = db_query("SELECT * FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND id=:proposal_id", array(
+	$query3 = \Drupal::database()->query("SELECT * FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND id=:proposal_id", array(
 		':proposal_id'=>$proposal_id
 	));
 	$data3             = $query3->fetchObject();
@@ -85,7 +85,7 @@ function generate_pdf()
 	$proposal_get_id = 0;
 	$UniqueString    = "";
 	$tempDir         = $path . "/pdf/temp_prcode/";
-	$query           = db_select('soul_science_and_concept_map_qr_code');
+	$query           = \Drupal::database()->select('soul_science_and_concept_map_qr_code');
 	$query->fields('soul_science_and_concept_map_qr_code');
 	$query->condition('proposal_id', $proposal_id);
 	$result          = $query->execute();
@@ -155,14 +155,14 @@ function generate_copyright_form_pdf()
 {
 	$mpath = drupal_get_path('module', 'soul_science_and_concept_map');
 	require($mpath . '/pdf/fpdf/fpdf.php');
-	global $user;
+	$user = \Drupal::currentUser();
 	$x           = $user->uid;
 	$proposal_id = arg(3);
-	$query2 = db_query("SELECT id FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
+	$query2 = \Drupal::database()->query("SELECT id FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
 		':uid' => $user->uid
 	));
 	$data2             = $query2->fetchObject();
-	$query3 = db_query("SELECT * FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
+	$query3 = \Drupal::database()->query("SELECT * FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
 		':uid' => $user->uid
 	));
 	$data3       = $query3->fetchObject();
@@ -243,14 +243,14 @@ function generate_undertaking_form_pdf()
 {
 	$mpath = drupal_get_path('module', 'textbook_companion');
 	require($mpath . '/pdf/fpdf/fpdf.php');
-	global $user;
+	$user = \Drupal::currentUser();
 	$x           = $user->uid;
 	$proposal_id = arg(3);
-	$query2 = db_query("SELECT id FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
+	$query2 = \Drupal::database()->query("SELECT id FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
 		':uid' => $user->uid
 	));
 	$data2             = $query2->fetchObject();
-	$query3 = db_query("SELECT * FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
+	$query3 = \Drupal::database()->query("SELECT * FROM dwsim_flowsheet_proposal WHERE approval_status=3 AND uid= :uid", array(
 		':uid' => $user->uid
 	));
 	$data3       = $query3->fetchObject();

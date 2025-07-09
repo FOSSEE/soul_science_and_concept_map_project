@@ -6,17 +6,17 @@ function science_and_concept_map_abstract_delete_project($proposal_id)
 {
 	$status = TRUE;
 	$root_path = science_and_concept_map_path();
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $proposal_id);
 	$proposal_q = $query->execute();
 	$proposal_data = $proposal_q->fetchObject();
 	if (!$proposal_data)
 	{
-		drupal_set_message('Invalid Flowsheeting Project.', 'error');
+		\Drupal::messenger()->addError('Invalid Flowsheeting Project.');
 		return FALSE;
 	} //!$proposal_data
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->condition('proposal_id', $proposal_id);
 	$abstract_q = $query->execute();
@@ -29,9 +29,9 @@ function science_and_concept_map_abstract_delete_project($proposal_id)
 		}
 		else
 		{
-			drupal_set_message('Invalid science and concept map project abstract.', 'error');
+			\Drupal::messenger()->addError('Invalid science and concept map project abstract.');
 		}
-		db_delete('soul_science_and_concept_map_submitted_abstracts_file')->condition('proposal_id', $proposal_id)->execute();
+		\Drupal::database()->delete('soul_science_and_concept_map_submitted_abstracts_file')->condition('proposal_id', $proposal_id)->execute();
 		//!dwsim_flowsheet_delete_abstract_file($abstract_data->id)
 	}
 	$res = rmdir($root_path . $proposal_data->directory_name . '/project_files');
@@ -41,9 +41,9 @@ function science_and_concept_map_abstract_delete_project($proposal_id)
 		unlink($root_path . $proposal_data->abstractfilepath);
 		$res = rmdir($dir_path_udc);
 	} //is_dir($dir_path_udc)
-	db_delete('soul_science_and_concept_map_proposal')->condition('id', $proposal_data->id)->execute();
+	\Drupal::database()->delete('soul_science_and_concept_map_proposal')->condition('id', $proposal_data->id)->execute();
 	
-	db_delete('soul_science_and_concept_map_submitted_abstracts')->condition('proposal_id', $proposal_id)->execute();
+	\Drupal::database()->delete('soul_science_and_concept_map_submitted_abstracts')->condition('proposal_id', $proposal_id)->execute();
 	return $status;
 }
 /*function science_and_concept_map_delete_abstract_file($abstract_id)
@@ -121,7 +121,7 @@ WHERE dfsa.id = :abstract_id", array(
 }
 function _science_and_concept_map_delete_abstract_file($abstract_id)
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$root_path = science_and_concept_map_path();
 	$query = db_select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');

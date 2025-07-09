@@ -72,7 +72,7 @@ function ajax_bulk_science_and_concept_map_abstract_details_callback($form, $for
 	{
 		$commands[] = ajax_command_html('#ajax_selected_science_and_concept_map', _science_and_concept_map_details($science_and_concept_map_project_default_value));
 		$form['science_and_concept_map_actions']['#options'] = _bulk_list_science_and_concept_map_actions();
-		$commands[] = ajax_command_replace('#ajax_selected_science_and_concept_map_action', drupal_render($form['science_and_concept_map_actions']));
+		$commands[] = ajax_command_replace('#ajax_selected_science_and_concept_map_action', \Drupal::service("renderer")->render($form['science_and_concept_map_actions']));
 	} //$science_and_concept_map_project_default_value != 0
 	else
 	{
@@ -87,69 +87,79 @@ function ajax_bulk_science_and_concept_map_abstract_details_callback($form, $for
 /************************************************************/
 function science_and_concept_map_abstract_bulk_approval_form_submit($form, &$form_state)
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$msg = '';
 	$root_path = science_and_concept_map_document_path();
 	if ($form_state['clicked_button']['#value'] == 'Submit')
 	{
 		if ($form_state['values']['science_and_concept_map_project'])
 		// science_and_concept_map_abstract_del_lab_pdf($form_state['values']['science_and_concept_map_project']);
-			if (user_access('soul science and concept map bulk manage abstract'))
+			if (\Drupal::currentUser()->hasPermission('soul science and concept map bulk manage abstract'))
 			{
-				$query = db_select('soul_science_and_concept_map_proposal');
+				$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 				$query->fields('soul_science_and_concept_map_proposal');
 				$query->condition('id', $form_state['values']['science_and_concept_map_project']);
 				$user_query = $query->execute();
 				$user_info = $user_query->fetchObject();
-				$user_data = user_load($user_info->uid);
+				$user_data = \Drupal::entityTypeManager()->getStorage('user')->load($user_info->uid);
 				if ($form_state['values']['science_and_concept_map_actions'] == 1)
 				{
 					// approving entire project //
-					$query = db_select('soul_science_and_concept_map_submitted_abstracts');
+					$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts');
 					$query->fields('soul_science_and_concept_map_submitted_abstracts');
 					$query->condition('proposal_id', $form_state['values']['science_and_concept_map_project']);
 					$abstracts_q = $query->execute();
 					$experiment_list = '';
 					while ($abstract_data = $abstracts_q->fetchObject())
 					{
-						db_query("UPDATE {soul_science_and_concept_map_submitted_abstracts} SET abstract_approval_status = 1, is_submitted = 1, approver_uid = :approver_uid WHERE id = :id", array(
+						\Drupal::database()->query("UPDATE {soul_science_and_concept_map_submitted_abstracts} SET abstract_approval_status = 1, is_submitted = 1, approver_uid = :approver_uid WHERE id = :id", array(
 							':approver_uid' => $user->uid,
 							':id' => $abstract_data->id
 						));
-						db_query("UPDATE {soul_science_and_concept_map_submitted_abstracts_file} SET file_approval_status = 1, approvar_uid = :approver_uid WHERE submitted_abstract_id = :submitted_abstract_id", array(
+						\Drupal::database()->query("UPDATE {soul_science_and_concept_map_submitted_abstracts_file} SET file_approval_status = 1, approvar_uid = :approver_uid WHERE submitted_abstract_id = :submitted_abstract_id", array(
 							':approver_uid' => $user->uid,
 							':submitted_abstract_id' => $abstract_data->id
 						));
 					} //$abstract_data = $abstracts_q->fetchObject()
-					drupal_set_message(t('Approved science and concept map project.'), 'status');
+					\Drupal::messenger()->addStatus(t('Approved science and concept map project.'));
 					// email 
-					$email_subject = t('[!site_name][Science and Concept Map Project] Your uploaded project files for science and concept map project have been approved', array(
-						'!site_name' => variable_get('site_name', '')
-					));
-					$email_body = array(
-						0 => t('
+					// @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// $email_subject = t('[!site_name][Science and Concept Map Project] Your uploaded project files for science and concept map project have been approved', array(
+// 						'!site_name' => variable_get('site_name', '')
+// 					));
 
-Dear !user_name,
+					// @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// $email_body = array(
+// 						0 => t('
+// 
+// Dear !user_name,
+// 
+// Your uploaded report and project files for the science and concept map project has been approved:
+// 
+// Full Name : ' . $user_info->name_title . ' ' . $user_info->contributor_name . '
+// Title of science and concept map project  : ' . $user_info->project_title . '
+// Title of Category  : ' . $user_info->category . '
+// 
+// Best Wishes,
+// 
+// !site_name Team,
+// FOSSEE,IIT Bombay', array(
+// 							'!site_name' => variable_get('site_name', ''),
+// 							'!user_name' => $user_data->name
+// 						))
+// 					);
 
-Your uploaded report and project files for the science and concept map project has been approved:
-
-Full Name : ' . $user_info->name_title . ' ' . $user_info->contributor_name . '
-Title of science and concept map project  : ' . $user_info->project_title . '
-Title of Category  : ' . $user_info->category . '
-
-Best Wishes,
-
-!site_name Team,
-FOSSEE,IIT Bombay', array(
-							'!site_name' => variable_get('site_name', ''),
-							'!user_name' => $user_data->name
-						))
-					);
 					/** sending email when everything done **/
 					$email_to = $user_data->mail;
-					$from = variable_get('science_and_concept_map_from_email', '');
-					$bcc = variable_get('science_and_concept_map_emails', '');
-					$cc = variable_get('science_and_concept_map_cc_emails', '');
+					$from = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+					$bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+					$cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
 					$params['standard']['subject'] = $email_subject;
 					$params['standard']['body'] = $email_body;
 					$params['standard']['headers'] = array(
@@ -163,7 +173,7 @@ FOSSEE,IIT Bombay', array(
 					);
 					if (!drupal_mail('science_and_concept_map', 'standard', $email_to, language_default(), $params, $from, TRUE))
 					{
-						$msg = drupal_set_message('Error sending email message.', 'error');
+						$msg = \Drupal::messenger()->addError('Error sending email message.');
 					} //!drupal_mail('science_and_concept_map', 'standard', $email_to, language_default(), $params, $from, TRUE)
 				} //$form_state['values']['science_and_concept_map_actions'] == 1
 				elseif ($form_state['values']['science_and_concept_map_actions'] == 2)
@@ -171,57 +181,67 @@ FOSSEE,IIT Bombay', array(
 					if (strlen(trim($form_state['values']['message'])) <= 30)
 					{
 						form_set_error('message', t(''));
-						$msg = drupal_set_message("Please mention the reason for resubmission. Minimum 30 character required", 'error');
+						$msg = \Drupal::messenger()->addError("Please mention the reason for resubmission. Minimum 30 character required");
 						return $msg;
 					}
 					//pending review entire project 
-					$query = db_select('soul_science_and_concept_map_submitted_abstracts');
+					$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts');
 					$query->fields('soul_science_and_concept_map_submitted_abstracts');
 					$query->condition('proposal_id', $form_state['values']['science_and_concept_map_project']);
 					$abstracts_q = $query->execute();
 					$experiment_list = '';
 					while ($abstract_data = $abstracts_q->fetchObject())
 					{
-						db_query("UPDATE {soul_science_and_concept_map_submitted_abstracts} SET abstract_approval_status = 0, is_submitted = 0, approver_uid = :approver_uid WHERE id = :id", array(
+						\Drupal::database()->query("UPDATE {soul_science_and_concept_map_submitted_abstracts} SET abstract_approval_status = 0, is_submitted = 0, approver_uid = :approver_uid WHERE id = :id", array(
 							':approver_uid' => $user->uid,
 							':id' => $abstract_data->id
 						));
-						db_query("UPDATE {soul_science_and_concept_map_proposal} SET is_submitted = 0, approver_uid = :approver_uid WHERE id = :id", array(
+						\Drupal::database()->query("UPDATE {soul_science_and_concept_map_proposal} SET is_submitted = 0, approver_uid = :approver_uid WHERE id = :id", array(
 							':approver_uid' => $user->uid,
 							':id' => $abstract_data->proposal_id
 						));
-						db_query("UPDATE {soul_science_and_concept_map_submitted_abstracts_file} SET file_approval_status = 0, approvar_uid = :approver_uid WHERE submitted_abstract_id = :submitted_abstract_id", array(
+						\Drupal::database()->query("UPDATE {soul_science_and_concept_map_submitted_abstracts_file} SET file_approval_status = 0, approvar_uid = :approver_uid WHERE submitted_abstract_id = :submitted_abstract_id", array(
 							':approver_uid' => $user->uid,
 							':submitted_abstract_id' => $abstract_data->id
 						));
 					} //$abstract_data = $abstracts_q->fetchObject()
-					drupal_set_message(t('Resubmit the project files'), 'status');
+					\Drupal::messenger()->addStatus(t('Resubmit the project files'));
 					// email 
-					$email_subject = t('[!site_name][Science and Concept Map Project] Your uploaded science and concept map project have been marked as pending', array(
-						'!site_name' => variable_get('site_name', '')
-					));
-					$email_body = array(
-						0 => t('
+					// @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// $email_subject = t('[!site_name][Science and Concept Map Project] Your uploaded science and concept map project have been marked as pending', array(
+// 						'!site_name' => variable_get('site_name', '')
+// 					));
 
-Dear !user_name,
+					// @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// $email_body = array(
+// 						0 => t('
+// 
+// Dear !user_name,
+// 
+// Kindly resubmit the project files for the project : ' . $user_info->project_title . 'after making changes considering the following reviewer’s comments.
+// 
+// Comment: ' . $form_state['values']['message'] . '
+// 
+// Best Wishes,
+// 
+// !site_name Team,
+// FOSSEE, IIT Bombay', array(
+// 							'!site_name' => variable_get('site_name', ''),
+// 							'!user_name' => $user_data->name
+// 						))
+// 					);
 
-Kindly resubmit the project files for the project : ' . $user_info->project_title . 'after making changes considering the following reviewer’s comments.
-
-Comment: ' . $form_state['values']['message'] . '
-
-Best Wishes,
-
-!site_name Team,
-FOSSEE, IIT Bombay', array(
-							'!site_name' => variable_get('site_name', ''),
-							'!user_name' => $user_data->name
-						))
-					);
 					/** sending email when everything done **/
 					$email_to = $user_data->mail;
-					$from = variable_get('science_and_concept_map_from_email', '');
-					$bcc = variable_get('science_and_concept_map_emails', '');
-					$cc = variable_get('science_and_concept_map_cc_emails', '');
+					$from = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+					$bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+					$cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
 					$params['standard']['subject'] = $email_subject;
 					$params['standard']['body'] = $email_body;
 					$params['standard']['headers'] = array(
@@ -235,7 +255,7 @@ FOSSEE, IIT Bombay', array(
 					);
 					if (!drupal_mail('science_and_concept_map', 'standard', $email_to, language_default(), $params, $from, TRUE))
 					{
-						drupal_set_message('Error sending email message.', 'error');
+						\Drupal::messenger()->addError('Error sending email message.');
 					} //!drupal_mail('science_and_concept_map', 'standard', $email_to, language_default(), $params, $from, TRUE)
 				} //$form_state['values']['science_and_concept_map_actions'] == 2
 				elseif ($form_state['values']['science_and_concept_map_actions'] == 3) //disapprove and delete entire science and concept map project
@@ -243,41 +263,51 @@ FOSSEE, IIT Bombay', array(
 					if (strlen(trim($form_state['values']['message'])) <= 30)
 					{
 						form_set_error('message', t(''));
-						$msg = drupal_set_message("Please mention the reason for disapproval. Minimum 30 character required", 'error');
+						$msg = \Drupal::messenger()->addError("Please mention the reason for disapproval. Minimum 30 character required");
 						return $msg;
 					} //strlen(trim($form_state['values']['message'])) <= 30
-					if (!user_access('soul science and concept map bulk delete abstract'))
+					if (!\Drupal::currentUser()->hasPermission('soul science and concept map bulk delete abstract'))
 					{
-						$msg = drupal_set_message(t('You do not have permission to Bulk Dis-Approved and Deleted Entire Project.'), 'error');
+						$msg = \Drupal::messenger()->addError(t('You do not have permission to Bulk Dis-Approved and Deleted Entire Project.'));
 						return $msg;
 					} //!user_access('science_and_concept_map bulk delete code')
 					if (science_and_concept_map_abstract_delete_project($form_state['values']['science_and_concept_map_project'])) //////
 					{
-						drupal_set_message(t('Dis-Approved and Deleted Entire science and concept map project.'), 'status');
-						$email_subject = t('[!site_name][Science and Concept Map Project] Your uploaded science and concept map project have been marked as dis-approved', array(
-						'!site_name' => variable_get('site_name', '')
-					));
-					$email_body = array(
-						0 => t('
+						\Drupal::messenger()->addStatus(t('Dis-Approved and Deleted Entire science and concept map project.'));
+						// @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// $email_subject = t('[!site_name][Science and Concept Map Project] Your uploaded science and concept map project have been marked as dis-approved', array(
+// 						'!site_name' => variable_get('site_name', '')
+// 					));
 
-Dear !user_name,
+					// @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// $email_body = array(
+// 						0 => t('
+// 
+// Dear !user_name,
+// 
+// Your uploaded science and concept map project files for the science and concept map project Title : ' . $user_info->project_title . ' have been marked as dis-approved.
+// 
+// Reason for dis-approval: ' . $form_state['values']['message'] . '
+// 
+// Best Wishes,
+// 
+// !site_name Team,
+// FOSSEE, IIT Bombay', array(
+// 					'!site_name' => variable_get('site_name', ''),
+// 					'!user_name' => $user_data->name
+// 											))
+// 					);
 
-Your uploaded science and concept map project files for the science and concept map project Title : ' . $user_info->project_title . ' have been marked as dis-approved.
-
-Reason for dis-approval: ' . $form_state['values']['message'] . '
-
-Best Wishes,
-
-!site_name Team,
-FOSSEE, IIT Bombay', array(
-					'!site_name' => variable_get('site_name', ''),
-					'!user_name' => $user_data->name
-											))
-					);
 					$email_to = $user_data->mail;
-					$from = variable_get('science_and_concept_map_from_email', '');
-					$bcc = variable_get('science_and_concept_map_emails', '');
-					$cc = variable_get('science_and_concept_map_cc_emails', '');
+					$from = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+					$bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+					$cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
 					$params['standard']['subject'] = $email_subject;
 					$params['standard']['body'] = $email_body;
 					$params['standard']['headers'] = array(
@@ -291,12 +321,12 @@ FOSSEE, IIT Bombay', array(
 					);
 					if (!drupal_mail('science_and_concept_map', 'standard', $email_to, language_default(), $params, $from, TRUE))
 					{
-						drupal_set_message('Error sending email message.', 'error');
+						\Drupal::messenger()->addError('Error sending email message.');
 					}
 					} //science_and_concept_map_abstract_delete_project($form_state['values']['science_and_concept_map_project'])
 					else
 					{
-						drupal_set_message(t('Error Dis-Approving and Deleting Entire science and concept map project.'), 'error');
+						\Drupal::messenger()->addError(t('Error Dis-Approving and Deleting Entire science and concept map project.'));
 					}
 					// email 
 					
@@ -418,7 +448,7 @@ function _bulk_list_of_science_and_concept_map_project()
 	$project_titles = array(
 		'0' => 'Please select...'
 	);
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('is_submitted', 1);
 	$query->condition('approval_status', 1);
@@ -444,12 +474,12 @@ function _bulk_list_science_and_concept_map_actions()
 function _science_and_concept_map_details($science_and_concept_map_proposal_id)
 {
 	$return_html = "";
-	$query_pro = db_select('soul_science_and_concept_map_proposal');
+	$query_pro = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query_pro->fields('soul_science_and_concept_map_proposal');
 	$query_pro->condition('id', $science_and_concept_map_proposal_id);
 	$abstracts_pro = $query_pro->execute()->fetchObject();
 	//var_dump($abstracts_pro);die;
-	$query_pdf = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query_pdf = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_pdf->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_pdf->condition('proposal_id', $science_and_concept_map_proposal_id);
 	$query_pdf->condition('filetype', 'A');
@@ -469,12 +499,12 @@ function _science_and_concept_map_details($science_and_concept_map_proposal_id)
 	{
 		$abstract_filename = "File not uploaded";
 	}
-	$query_process = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query_process = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_process->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_process->condition('proposal_id', $science_and_concept_map_proposal_id);
 	$query_process->condition('filetype', 'S');
 	$abstracts_query_process = $query_process->execute()->fetchObject();
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts');
 	$query->condition('proposal_id', $science_and_concept_map_proposal_id);
 	$abstracts_q = $query->execute()->fetchObject();
@@ -500,10 +530,16 @@ function _science_and_concept_map_details($science_and_concept_map_proposal_id)
 	} //$abstracts_query_process == TRUE
 	else
 	{
-		$url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
+		// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
+
 		$abstracts_query_process_filename = "File not uploaded";
 	}
-	$download_science_and_concept_map = l('Download science and concept map project','science-and-concept-map-project/full-download/project/'.$science_and_concept_map_proposal_id);
+	// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $download_science_and_concept_map = l('Download science and concept map project','science-and-concept-map-project/full-download/project/'.$science_and_concept_map_proposal_id);
+
 	$return_html .= '<strong>Proposer Name:</strong><br />' . $abstracts_pro->name_title . ' ' . $abstracts_pro->contributor_name . '<br /><br />';
 	$return_html .= '<strong>Title of the science and concept map Project:</strong><br />' . $abstracts_pro->project_title . '<br /><br />';
 	$return_html .= '<strong>Title of the Category:</strong><br />' . $abstracts_pro->category . '<br /><br />';

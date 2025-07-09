@@ -42,10 +42,13 @@ function science_and_concept_map_run_form($form, &$form_state)
 			'#type' => 'item',
 			'#markup' => '<div id="ajax_science_and_concept_map_details">' . _science_and_concept_map_details($science_and_concept_map_default_value) . '</div>'
 		);
-		$form['selected_science_and_concept_map'] = array(
-			'#type' => 'item',
-			'#markup' => '<div id="ajax_selected_science_and_concept_map">' . l('Download Abstract', "science-and-concept-map-project/download/abstract-file/" . $science_and_concept_map_default_value) . '<br>' . l('Download science and concept map', 'science-and-concept-map-project/full-download/project/' . $science_and_concept_map_default_value) . '</div>'
-		);
+		// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $form['selected_science_and_concept_map'] = array(
+// 			'#type' => 'item',
+// 			'#markup' => '<div id="ajax_selected_science_and_concept_map">' . l('Download Abstract', "science-and-concept-map-project/download/abstract-file/" . $science_and_concept_map_default_value) . '<br>' . l('Download science and concept map', 'science-and-concept-map-project/full-download/project/' . $science_and_concept_map_default_value) . '</div>'
+// 		);
+
 	}
 	return $form;
 }
@@ -56,9 +59,12 @@ function science_and_concept_map_project_details_callback($form, $form_state)
 	if ($science_and_concept_map_default_value != 0) {
 		$form['science_and_concept_map_details']['#markup'] = _science_and_concept_map_details($science_and_concept_map_default_value);
 		$science_and_concept_map_details = _science_and_concept_map_information($science_and_concept_map_default_value);
-		$provider = user_load($science_and_concept_map_details->uid);
+		$provider = \Drupal::entityTypeManager()->getStorage('user')->load($science_and_concept_map_details->uid);
 		if ($science_and_concept_map_details->uid > 0) {
-			$commands[] = ajax_command_html('#ajax_selected_science_and_concept_map',l('Download Abstract', "science-and-concept-map-project/download/abstract-file/" . $science_and_concept_map_default_value) . '<br>' . l('Download science and concept map', 'science-and-concept-map-project/full-download/project/' . $science_and_concept_map_default_value));
+			// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $commands[] = ajax_command_html('#ajax_selected_science_and_concept_map',l('Download Abstract', "science-and-concept-map-project/download/abstract-file/" . $science_and_concept_map_default_value) . '<br>' . l('Download science and concept map', 'science-and-concept-map-project/full-download/project/' . $science_and_concept_map_default_value));
+
 		} //$science_and_concept_map_details->uid > 0
 		else {
 			$commands[] = ajax_command_html('#ajax_selected_science_and_concept_map', '');
@@ -108,7 +114,7 @@ function _list_of_science_and_concept_map()
 		'0' => 'Please select...'
 	);
 	//$lab_titles_q = db_query("SELECT * FROM {science_and_concept_map_proposal} WHERE solution_display = 1 ORDER BY lab_title ASC");
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('approval_status', 3);
 	$query->orderBy('project_title', 'ASC');
@@ -120,7 +126,7 @@ function _list_of_science_and_concept_map()
 }
 function _science_and_concept_map_information($proposal_id)
 {
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $proposal_id);
 	$query->condition('approval_status', 3);

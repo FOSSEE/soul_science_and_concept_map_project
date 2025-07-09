@@ -4,7 +4,7 @@ function science_and_concept_map_download_upload_file()
 {
 	$proposal_id = arg(3);
 	$root_path = science_and_concept_map_document_path();
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $proposal_id);
 	$query->range(0, 1);
@@ -32,13 +32,13 @@ function science_and_concept_map_download_upload_file()
 function soul_science_and_concept_map_project_files() {
 	$proposal_id = arg(3);
 	$root_path = science_and_concept_map_document_path();
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->condition('proposal_id', $proposal_id);
 	$result = $query->execute();
 	$soul_science_and_concept_map_project_files = $result->fetchObject();
 	//var_dump($soul_science_and_concept_map_project_files);die;
-	$query1 = db_select('soul_science_and_concept_map_proposal');
+	$query1 = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query1->fields('soul_science_and_concept_map_proposal');
 	$query1->condition('id', $proposal_id);
 	$result1 = $query1->execute();
@@ -223,7 +223,7 @@ function science_and_concept_map_download_experiment()
 }
 function science_and_concept_map_download_project()
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$lab_id = arg(3);
 	$root_path = science_and_concept_map_path();
 	$query = db_select('soul_science_and_concept_map_proposal');

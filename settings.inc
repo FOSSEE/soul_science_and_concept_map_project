@@ -9,7 +9,7 @@ function science_and_concept_map_settings_form($form, $form_state)
 		'#size' => 50,
 		'#maxlength' => 255,
 		'#required' => TRUE,
-		'#default_value' => variable_get('science_and_concept_map_emails', '')
+		'#default_value' => \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails')
 	);
 	$form['cc_emails'] = array(
 		'#type' => 'textfield',
@@ -18,7 +18,7 @@ function science_and_concept_map_settings_form($form, $form_state)
 		'#size' => 50,
 		'#maxlength' => 255,
 		'#required' => TRUE,
-		'#default_value' => variable_get('science_and_concept_map_cc_emails', '')
+		'#default_value' => \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails')
 	);
 	$form['from_email'] = array(
 		'#type' => 'textfield',
@@ -27,7 +27,7 @@ function science_and_concept_map_settings_form($form, $form_state)
 		'#size' => 50,
 		'#maxlength' => 255,
 		'#required' => TRUE,
-		'#default_value' => variable_get('science_and_concept_map_from_email', '')
+		'#default_value' => \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email')
 	);
 	$form['extensions']['abstract_upload'] = array(
 		'#type' => 'textfield',
@@ -36,7 +36,7 @@ function science_and_concept_map_settings_form($form, $form_state)
 		'#size' => 50,
 		'#maxlength' => 255,
 		'#required' => TRUE,
-		'#default_value' => variable_get('science_and_concept_map_abstract_upload_extensions', '')
+		'#default_value' => \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_abstract_upload_extensions')
 	);
 	$form['extensions']['report_upload'] = array(
 		'#type' => 'textfield',
@@ -45,7 +45,7 @@ function science_and_concept_map_settings_form($form, $form_state)
 		'#size' => 50,
 		'#maxlength' => 255,
 		'#required' => TRUE,
-		'#default_value' => variable_get('science_and_concept_map_report_upload_extensions', '')
+		'#default_value' => \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_report_upload_extensions')
 	);
 	$form['extensions']['science_and_concept_map_code_upload'] = array(
 		'#type' => 'textfield',
@@ -54,7 +54,7 @@ function science_and_concept_map_settings_form($form, $form_state)
 		'#size' => 50,
 		'#maxlength' => 255,
 		'#required' => TRUE,
-		'#default_value' => variable_get('science_and_concept_map_code_files_extensions', '')
+		'#default_value' => \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_code_files_extensions')
 	);
 	$form['submit'] = array(
 		'#type' => 'submit',
@@ -68,11 +68,11 @@ function science_and_concept_map_settings_form_validate($form, &$form_state)
 }
 function science_and_concept_map_settings_form_submit($form, &$form_state)
 {
-	variable_set('science_and_concept_map_emails', $form_state['values']['emails']);
-	variable_set('science_and_concept_map_cc_emails', $form_state['values']['cc_emails']);
-	variable_set('science_and_concept_map_from_email', $form_state['values']['from_email']);
-	variable_set('science_and_concept_map_abstract_upload_extensions', $form_state['values']['abstract_upload']);
-	variable_set('science_and_concept_map_report_upload_extensions', $form_state['values']['report_upload']);
-	variable_set('science_and_concept_map_code_files_extensions', $form_state['values']['science_and_concept_map_code_upload']);
-	drupal_set_message(t('Settings updated'), 'status');
+	\Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_emails', $form_state['values']['emails'])->save();
+	\Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_cc_emails', $form_state['values']['cc_emails'])->save();
+	\Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_from_email', $form_state['values']['from_email'])->save();
+	\Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_abstract_upload_extensions', $form_state['values']['abstract_upload'])->save();
+	\Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_report_upload_extensions', $form_state['values']['report_upload'])->save();
+	\Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_code_files_extensions', $form_state['values']['science_and_concept_map_code_upload'])->save();
+	\Drupal::messenger()->addStatus(t('Settings updated'));
 }

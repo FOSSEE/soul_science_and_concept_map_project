@@ -2,7 +2,7 @@
 // $Id$
 function science_and_concept_map_abstract()
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$return_html = "";
 	$proposal_data = science_and_concept_map_get_proposal();
 	if (!$proposal_data)
@@ -12,7 +12,7 @@ function science_and_concept_map_abstract()
 	} //!$proposal_data
 	//$return_html .= l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload') . '<br />';
 	/* get experiment list */
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts');
 	$query->condition('proposal_id', $proposal_data->id);
 	$abstracts_q = $query->execute()->fetchObject();
@@ -25,11 +25,11 @@ function science_and_concept_map_abstract()
 			//return;
 		} //$abstracts_q->is_submitted == 1
 	}*/ //$abstracts_q
-	$query_pro = db_select('soul_science_and_concept_map_proposal');
+	$query_pro = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query_pro->fields('soul_science_and_concept_map_proposal');
 	$query_pro->condition('id', $proposal_data->id);
 	$abstracts_pro = $query_pro->execute()->fetchObject();
-	$query_pdf = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query_pdf = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_pdf->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_pdf->condition('proposal_id', $proposal_data->id);
 	$query_pdf->condition('filetype', 'A');
@@ -50,7 +50,7 @@ function science_and_concept_map_abstract()
 	{
 		$abstract_filename = "File not uploaded";
 	}
-	$query_process = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query_process = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_process->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query_process->condition('proposal_id', $proposal_data->id);
 	$query_process->condition('filetype', 'S');
@@ -68,7 +68,10 @@ function science_and_concept_map_abstract()
 		}
 		if ($abstracts_q->is_submitted == '')
 		{
-			$url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
+			// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
+
 		} //$abstracts_q->is_submitted == ''
 		else if ($abstracts_q->is_submitted == 1)
 		{
@@ -76,12 +79,18 @@ function science_and_concept_map_abstract()
 		} //$abstracts_q->is_submitted == 1
 		else if ($abstracts_q->is_submitted == 0)
 		{
-			$url = l('Edit', 'science-and-concept-map-project/abstract-code/upload');
+			// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $url = l('Edit', 'science-and-concept-map-project/abstract-code/upload');
+
 		} //$abstracts_q->is_submitted == 0
 	} //$abstracts_query_process == TRUE
 	else
 	{
-		$url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
+		// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
+
 		$abstracts_query_process_filename = "File not uploaded";
 	}
 	$return_html .= '<strong>Contributor Name:</strong><br />' . $proposal_data->name_title . ' ' . $proposal_data->contributor_name . '<br /><br />';
@@ -114,14 +123,14 @@ function science_and_concept_map_abstract()
 
 function science_and_concept_map_upload_abstract_code_form($form, &$form_state)
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$form['#attributes'] = array(
 		'enctype' => "multipart/form-data"
 	);
 	/* get current proposal */
 	//$proposal_id = (int) arg(3);
 	$uid = $user->uid;
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('uid', $uid);
 	$query->condition('approval_status', '1');
@@ -134,18 +143,18 @@ function science_and_concept_map_upload_abstract_code_form($form, &$form_state)
 		} //$proposal_data = $proposal_q->fetchObject()
 		else
 		{
-			drupal_set_message(t('Invalid proposal selected. Please try again.'), 'error');
+			\Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
 			drupal_goto('science-and-concept-map-project/abstract-code');
 			return;
 		}
 	} //$proposal_q
 	else
 	{
-		drupal_set_message(t('Invalid proposal selected. Please try again.'), 'error');
+		\Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
 		drupal_goto('science-and-concept-map-project/abstract-code');
 		return;
 	}
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts');
 	$query->condition('proposal_id', $proposal_data->id);
 	$abstracts_q = $query->execute()->fetchObject();
@@ -153,7 +162,7 @@ function science_and_concept_map_upload_abstract_code_form($form, &$form_state)
 	{
 		if ($abstracts_q->is_submitted == 1)
 		{
-			drupal_set_message(t('You have already submited your project files, hence you can not upload more code, for any query please write to us.'), 'error', $repeat = FALSE);
+			\Drupal::messenger()->addError(t('You have already submited your project files, hence you can not upload more code, for any query please write to us.'));
 			drupal_goto('science-and-concept-map-project/abstract-code');
 			//return;
 		} //$abstracts_q->is_submitted == 1
@@ -182,7 +191,7 @@ function science_and_concept_map_upload_abstract_code_form($form, &$form_state)
 	$form['upload_an_report'] = array(
 		'#type' => 'file',
 		'#title' => t('Upload the report.') ,
-		'#description' => t('<span style="color:red;">Current File :</span> ' . $existing_uploaded_A_file->filename . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . variable_get('science_and_concept_map_report_upload_extensions', '') . '</span>'
+		'#description' => t('<span style="color:red;">Current File :</span> ' . $existing_uploaded_A_file->filename . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_report_upload_extensions') . '</span>'
 	));
 	$existing_uploaded_S_file = default_value_for_uploaded_files("S", $proposal_data->id);
 	if (!$existing_uploaded_S_file)
@@ -193,7 +202,7 @@ function science_and_concept_map_upload_abstract_code_form($form, &$form_state)
 	$form['upload_science_and_concept_map_code_files'] = array(
 		'#type' => 'file',
 		'#title' => t('Upload the Project file'),
-		'#description' => t('<span style="color:red;">Current File :</span> ' . $existing_uploaded_S_file->filename . '<br />Separate filenames with underscore. No spaces or any special characters allowed in filename.') . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . variable_get('science_and_concept_map_code_files_extensions', '') . '</span>'
+		'#description' => t('<span style="color:red;">Current File :</span> ' . $existing_uploaded_S_file->filename . '<br />Separate filenames with underscore. No spaces or any special characters allowed in filename.') . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_code_files_extensions') . '</span>'
 	);
 	$form['prop_id'] = array(
 		'#type' => 'hidden',
@@ -214,10 +223,13 @@ function science_and_concept_map_upload_abstract_code_form($form, &$form_state)
 			'science_and_concept_map_upload_abstract_code_form_submit'
 		)
 	);
-	$form['cancel'] = array(
-		'#type' => 'item',
-		'#markup' => l(t('Cancel'), 'science-and-concept-map-project/abstract-code')
-	);
+	// @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $form['cancel'] = array(
+// 		'#type' => 'item',
+// 		'#markup' => l(t('Cancel'), 'science-and-concept-map-project/abstract-code')
+// 	);
+
 	return $form;
 }
 
@@ -257,10 +269,10 @@ function science_and_concept_map_upload_abstract_code_form_validate($form, &$for
 					switch ($file_type)
 					{
 						case 'S':
-							$allowed_extensions_str = variable_get('science_and_concept_map_code_files_extensions', '');
+							$allowed_extensions_str = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_code_files_extensions');
 							break;
 						case 'A':
-							$allowed_extensions_str = variable_get('science_and_concept_map_report_upload_extensions', '');
+							$allowed_extensions_str = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_report_upload_extensions');
 							break;
 					} //$file_type
 					$allowed_extensions = explode(',', $allowed_extensions_str);
@@ -282,7 +294,7 @@ function science_and_concept_map_upload_abstract_code_form_validate($form, &$for
 }
 function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_state)
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$v = $form_state['values'];
 	$root_path = science_and_concept_map_path();
 	$proposal_data = science_and_concept_map_get_proposal();
@@ -304,7 +316,7 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 	$args_s = array(
 		":proposal_id" => $proposal_id
 	);
-	$query_s_result = db_query($query_s, $args_s)->fetchObject();
+	$query_s_result = \Drupal::database()->query($query_s, $args_s)->fetchObject();
 	if (!$query_s_result)
 	{
 		/* creating solution database entry */
@@ -323,16 +335,14 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 			":abstract_approval_date" => 0,
 			":is_submitted" => 1
 		);
-		$submitted_abstract_id = db_query($query, $args, array(
-			'return' => Database::RETURN_INSERT_ID
-		));
+		$submitted_abstract_id = \Drupal::database()->query($query, $args, $query);
 		$query1 = "UPDATE {soul_science_and_concept_map_proposal} SET is_submitted = :is_submitted WHERE id = :id";
 		$args1 = array(
 			":is_submitted" => 1,
 			":id" => $proposal_id
 		);
-		db_query($query1,$args1);
-		drupal_set_message('Abstract uploaded successfully.', 'status');
+		\Drupal::database()->query($query1, $args1);
+		\Drupal::messenger()->addStatus('Abstract uploaded successfully.');
 	} //!$query_s_result
 	else
 	{
@@ -349,16 +359,14 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 			":is_submitted" => 1,
 			":proposal_id" => $proposal_id
 		);
-		$submitted_abstract_id = db_query($query, $args, array(
-			'return' => Database::RETURN_INSERT_ID
-		));
+		$submitted_abstract_id = \Drupal::database()->query($query, $args, $query);
 		$query1 = "UPDATE {soul_science_and_concept_map_proposal} SET is_submitted = :is_submitted WHERE id = :id";
 		$args1 = array(
 			":is_submitted" => 1,
 			":id" => $proposal_id
 		);
-		db_query($query1,$args1);
-		drupal_set_message('Abstract updated successfully.', 'status');
+		\Drupal::database()->query($query1, $args1);
+		\Drupal::messenger()->addStatus('Abstract updated successfully.');
 	}
 	foreach ($_FILES['files']['name'] as $file_form_name => $file_name)
 	{
@@ -383,9 +391,9 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 					if (file_exists($root_path . $dest_path_project_files . $_FILES['files']['name'][$file_form_name]))
 					{
 						//unlink($root_path . $dest_path . $_FILES['files']['name'][$file_form_name]);
-						drupal_set_message(t("File !filename already exists hence overwirtten the exisitng file ", array(
+						\Drupal::messenger()->addError(t("File !filename already exists hence overwirtten the exisitng file ", array(
 							'!filename' => $_FILES['files']['name'][$file_form_name]
-						)), 'error');
+						)));
 					} //file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
 					/* uploading file */
 					else if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path_project_files . $_FILES['files']['name'][$file_form_name]))
@@ -397,7 +405,7 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 							":proposal_id" => $proposal_id,
 							":filetype" => $file_type
 						);
-						$query_ab_f_result = db_query($query_ab_f, $args_ab_f)->fetchObject();
+						$query_ab_f_result = \Drupal::database()->query($query_ab_f, $args_ab_f)->fetchObject();
 						if (!$query_ab_f_result)
 						{
 							$query = "INSERT INTO {soul_science_and_concept_map_submitted_abstracts_file} (submitted_abstract_id, proposal_id, uid, approvar_uid, filename, filepath, filemime, filesize, filetype, timestamp)
@@ -414,8 +422,8 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 								":filetype" => $file_type,
 								":timestamp" => time()
 							);
-							db_query($query, $args);
-							drupal_set_message($file_name . ' uploaded successfully.', 'status');
+							\Drupal::database()->query($query, $args);
+							\Drupal::messenger()->addStatus($file_name . ' uploaded successfully.');
 						} //!$query_ab_f_result
 						else
 						{
@@ -430,22 +438,22 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 								":proposal_id" => $proposal_id,
 								":filetype" => $file_type
 							);
-							db_query($query, $args);
-							drupal_set_message($file_name . ' file updated successfully.', 'status');
+							\Drupal::database()->query($query, $args);
+							\Drupal::messenger()->addStatus($file_name . ' file updated successfully.');
 						}
 					} //move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
 					else
 					{
-						drupal_set_message('Error uploading file : ' . $dest_path_project_files . $file_name, 'error');
+						\Drupal::messenger()->addError('Error uploading file : ' . $dest_path_project_files . $file_name);
 					}
 					break;
 				case 'A':
 					if (file_exists($root_path . $dest_path_project_files . $_FILES['files']['name'][$file_form_name]))
 					{
 						//unlink($root_path . $dest_path . $_FILES['files']['name'][$file_form_name]);
-						drupal_set_message(t("File !filename already exists hence overwirtten the exisitng file ", array(
+						\Drupal::messenger()->addError(t("File !filename already exists hence overwirtten the exisitng file ", array(
 							'!filename' => $_FILES['files']['name'][$file_form_name]
-						)), 'error');
+						)));
 					} //file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
 					/* uploading file */
 					else if (move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path_project_files . $_FILES['files']['name'][$file_form_name]))
@@ -457,7 +465,7 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 							":proposal_id" => $proposal_id,
 							":filetype" => $file_type
 						);
-						$query_ab_f_result = db_query($query_ab_f, $args_ab_f)->fetchObject();
+						$query_ab_f_result = \Drupal::database()->query($query_ab_f, $args_ab_f)->fetchObject();
 						if (!$query_ab_f_result)
 						{
 							$query = "INSERT INTO {soul_science_and_concept_map_submitted_abstracts_file} (submitted_abstract_id, proposal_id, uid, approvar_uid, filename, filepath, filemime, filesize, filetype, timestamp)
@@ -474,8 +482,8 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 								":filetype" => $file_type,
 								":timestamp" => time()
 							);
-							db_query($query, $args);
-							drupal_set_message($file_name . ' uploaded successfully.', 'status');
+							\Drupal::database()->query($query, $args);
+							\Drupal::messenger()->addStatus($file_name . ' uploaded successfully.');
 						} //!$query_ab_f_result
 						else
 						{
@@ -490,13 +498,13 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 								":proposal_id" => $proposal_id,
 								":filetype" => $file_type
 							);
-							db_query($query, $args);
-							drupal_set_message($file_name . ' file updated successfully.', 'status');
+							\Drupal::database()->query($query, $args);
+							\Drupal::messenger()->addStatus($file_name . ' file updated successfully.');
 						}
 					} //move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
 					else
 					{
-						drupal_set_message('Error uploading file : ' . $dest_path_project_files . $file_name, 'error');
+						\Drupal::messenger()->addError('Error uploading file : ' . $dest_path_project_files . $file_name);
 					}
 					break;
 			} //$file_type
@@ -504,9 +512,9 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 	} //$_FILES['files']['name'] as $file_form_name => $file_name
 	/* sending email */
 	$email_to = $user->mail;
-	$from = variable_get('science_and_concept_map_from_email', '');
-	$bcc = variable_get('science_and_concept_map_emails', '');
-	$cc = variable_get('science_and_concept_map_cc_emails', '');
+	$from = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+	$bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+	$cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
 	$params['abstract_uploaded']['proposal_id'] = $proposal_id;
 	$params['abstract_uploaded']['submitted_abstract_id'] = $submitted_abstract_id;
 	$params['abstract_uploaded']['user_id'] = $user->uid;
@@ -520,12 +528,12 @@ function science_and_concept_map_upload_abstract_code_form_submit($form, &$form_
 		'Bcc' => $bcc
 	);
 	if (!drupal_mail('science_and_concept_map', 'abstract_uploaded', $email_to, language_default(), $params, $from, TRUE))
-		drupal_set_message('Error sending email message.', 'error');
+		\Drupal::messenger()->addError('Error sending email message.');
 	drupal_goto('science-and-concept-map-project/abstract-code');
 }
 function default_value_for_uploaded_files($filetype, $proposal_id)
 {
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->condition('proposal_id', $proposal_id);
 	$selected_files_array = "";

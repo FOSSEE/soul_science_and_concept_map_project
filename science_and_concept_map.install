@@ -7,11 +7,11 @@ function science_and_concept_map_install()
   {
     // Create tables.
     //drupal_install_schema('science_and_concept_map');
-    variable_set('science_and_concept_map_emails', '');
-    variable_set('science_and_concept_map_from_email', '');
-    variable_set('science_and_concept_map_abstract_upload_extensions', '');
-    variable_set('science_and_concept_map_report_upload_extensions', '');
-    variable_set('science_and_concept_map_code_files_extensions', '');
+    \Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_emails', '')->save();
+    \Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_from_email', '')->save();
+    \Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_abstract_upload_extensions', '')->save();
+    \Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_report_upload_extensions', '')->save();
+    \Drupal::configFactory()->getEditable('science_and_concept_map.settings')->set('science_and_concept_map_code_files_extensions', '')->save();
     // create uploads folder
     $upload_path = $_SERVER['DOCUMENT_ROOT'] . base_path() . 'soul_uploads/science_and_concept_map_uploads/';
     if (!is_dir($upload_path))
@@ -25,11 +25,11 @@ function science_and_concept_map_uninstall()
     // Remove tables.
     drupal_uninstall_schema('science_and_concept_map');
     // Remove variables
-    variable_del('science_and_concept_map_emails');
-    variable_del('science_and_concept_map_from_email');
-    variable_del('science_and_concept_map_abstract_upload_extensions');
-    variable_del('science_and_concept_map_report_upload_extensions');
-    variable_del('science_and_concept_map_code_files_extensions');
+    \Drupal::config('science_and_concept_map.settings')->clear('science_and_concept_map_emails')->save();
+    \Drupal::config('science_and_concept_map.settings')->clear('science_and_concept_map_from_email')->save();
+    \Drupal::config('science_and_concept_map.settings')->clear('science_and_concept_map_abstract_upload_extensions')->save();
+    \Drupal::config('science_and_concept_map.settings')->clear('science_and_concept_map_report_upload_extensions')->save();
+    \Drupal::config('science_and_concept_map.settings')->clear('science_and_concept_map_code_files_extensions')->save();
   }
 /**
  * Implementation of hook_schema().

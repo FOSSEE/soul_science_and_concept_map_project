@@ -26,16 +26,16 @@ science_and_concept_map_solution : approval_status
 */
 function science_and_concept_map_proposal_form($form, &$form_state, $no_js_use = FALSE)
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	/************************ start approve book details ************************/
 	if ($user->uid == 0)
 	{
-		$msg = drupal_set_message(t('It is mandatory to ' . l('login', 'user') . ' on this website to access the science and concept map proposal form. If you are new user please create a new account first.'), 'error');
+		$msg = \Drupal::messenger()->addError(t('It is mandatory to ' . \Drupal\Core\Link::fromTextAndUrl('login', \Drupal\Core\Url::fromRoute('user.page')) . ' on this website to access the science and concept map proposal form. If you are new user please create a new account first.'));
 		//drupal_goto('soul-science-and-concept-map-project');
 		drupal_goto('user/login', array('query' => drupal_get_destination()));
 		return $msg;
 	} //$user->uid == 0
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('uid', $user->uid);
 	$query->orderBy('id', 'DESC');
@@ -46,7 +46,7 @@ function science_and_concept_map_proposal_form($form, &$form_state, $no_js_use =
 	{
 		if ($proposal_data->approval_status == 0 || $proposal_data->approval_status == 1)
 		{
-			drupal_set_message(t('We have already received your proposal.'), 'status');
+			\Drupal::messenger()->addStatus(t('We have already received your proposal.'));
 			drupal_goto('');
 			return;
 		} //$proposal_data->approval_status == 0 || $proposal_data->approval_status == 1
@@ -440,7 +440,7 @@ function science_and_concept_map_proposal_form($form, &$form_state, $no_js_use =
 		'#type' => 'file',
 		//'#title' => t('Upload circuit diagram'),
 		'#size' => 48,
-		'#description' => t('Upload filenames with allowed extensions only. No spaces or any special characters allowed in filename.') . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . variable_get('science_and_concept_map_abstract_upload_extensions', '') . '</span>'
+		'#description' => t('Upload filenames with allowed extensions only. No spaces or any special characters allowed in filename.') . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_abstract_upload_extensions') . '</span>'
 	);
 	$form['reference'] = array(
 		'#type' => 'textfield',
@@ -509,12 +509,12 @@ function ajax_solver_used_callback($form, $form_state)
 		$form['software_version_no']['#options'] = _soul_list_of_software_version_details($software_version_id);/*
 		$form['software_version_no']['#required'] = TRUE;
 		$form['software_version_no']['#validated'] = TRUE;*/
-		$commands[] = ajax_command_replace('#ajax-solver-replace', drupal_render($form['software_version_no']));
+		$commands[] = ajax_command_replace('#ajax-solver-replace', \Drupal::service("renderer")->render($form['software_version_no']));
 		$commands[] = ajax_command_html('#ajax-solver-text-replace', '');
 	}
 	else{
 		$commands[] = ajax_command_html('#ajax-solver-replace', '');
-		$commands[] = ajax_command_html('#ajax-solver-text-replace', drupal_render($form['other_software_version_no']));
+		$commands[] = ajax_command_html('#ajax-solver-text-replace', \Drupal::service("renderer")->render($form['other_software_version_no']));
 	}
 	return array(
         '#type' => 'ajax',
@@ -644,7 +644,7 @@ if (isset($_FILES['files']))
 						$allowed_extensions_str = variable_get('textbook_companion_source_extensions', '');
 						break;
 				} *///$file_type
-				$allowed_extensions_str = variable_get('science_and_concept_map_abstract_upload_extensions', '');
+				$allowed_extensions_str = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_abstract_upload_extensions');
 				$allowed_extensions = explode(',', $allowed_extensions_str);
 				$fnames = explode('.', strtolower($_FILES['files']['name'][$file_form_name]));
 				$temp_extension = end($fnames);
@@ -691,11 +691,11 @@ if (isset($_FILES['files']))
 }
 function science_and_concept_map_proposal_form_submit($form, &$form_state)
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$root_path = science_and_concept_map_path();
 	if (!$user->uid)
 	{
-		drupal_set_message('It is mandatory to login on this website to access the proposal form', 'error');
+		\Drupal::messenger()->addError('It is mandatory to login on this website to access the proposal form');
 		return;
 	} //!$user->uid
 	/* inserting the user proposal */
@@ -840,9 +840,7 @@ function science_and_concept_map_proposal_form_submit($form, &$form_state)
 		);
 	//var_dump($args);die;
 	//var_dump($result);die;
-	$result1 = db_query($result, $args, array(
-		'return' => Database::RETURN_INSERT_ID
-	));
+	$result1 = \Drupal::database()->query($result, $args, $result);
 //var_dump($args);die;
 $proposal_id = $result1;
 	/* inserting first book preference */
@@ -864,12 +862,10 @@ $proposal_id = $result1;
 			":edition" => trim($form_state['values']['edition1']),
 			":book_year" => trim($form_state['values']['book_year']),
 		);
-		$result = db_query($query, $args, array(
-			'return' => Database::RETURN_INSERT_ID
-		));
+		$result = \Drupal::database()->query($query, $args, $query);
 		if (!$result)
 		{
-			drupal_set_message(t('Error receiving your first book preference.'), 'error');
+			\Drupal::messenger()->addError(t('Error receiving your first book preference.'));
 		} //!$result
 	} //$form_state['values']['book1']
 
@@ -887,7 +883,7 @@ $proposal_id = $result1;
 			//$file_type = 'S';
 			if (file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name]))
 			{
-				 drupal_set_message(t("Error uploading file. File !filename already exists.", array('!filename' => $_FILES['files']['name'][$file_form_name])), 'error');
+				 \Drupal::messenger()->addError(t("Error uploading file. File !filename already exists.", array('!filename' => $_FILES['files']['name'][$file_form_name])));
 				//unlink($root_path . $dest_path . $_FILES['files']['name'][$file_form_name]);
 			} //file_exists($root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
 			/* uploading file */
@@ -899,27 +895,27 @@ $proposal_id = $result1;
 					":id" => $result1
 				);
 				
-				$updateresult = db_query($query, $args);
+				$updateresult = \Drupal::database()->query($query, $args);
 				//var_dump($args);die;
 
-				drupal_set_message($file_name . ' uploaded successfully.', 'status');
+				\Drupal::messenger()->addStatus($file_name . ' uploaded successfully.');
 			} //move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
 			else
 			{
-				drupal_set_message('Error uploading file : ' . $dest_path . '/' . $file_name, 'error');
+				\Drupal::messenger()->addError('Error uploading file : ' . $dest_path . '/' . $file_name);
 			}
 		} //$file_name
 	} //$_FILES['files']['name'] as $file_form_name => $file_name
 	if (!$result1)
 	{
-		drupal_set_message(t('Error receiving your proposal. Please try again.'), 'error');
+		\Drupal::messenger()->addError(t('Error receiving your proposal. Please try again.'));
 		return;
 	} //!$proposal_id
 	/* sending email */
 	$email_to = $user->mail;
-	$form = variable_get('science_and_concept_map_from_email', '');
-	$bcc = variable_get('science_and_concept_map_emails', '');
-	$cc = variable_get('science_and_concept_map_cc_emails', '');
+	$form = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+	$bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+	$cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
 	$params['science_and_concept_map_proposal_received']['result1'] = $result1;
 	$params['science_and_concept_map_proposal_received']['user_id'] = $user->uid;
 	$params['science_and_concept_map_proposal_received']['headers'] = array(
@@ -932,7 +928,7 @@ $proposal_id = $result1;
 		'Bcc' => $bcc
 	);
 	if (!drupal_mail('science_and_concept_map', 'science_and_concept_map_proposal_received', $email_to, user_preferred_language($user), $params, $form, TRUE))
-		drupal_set_message('Error sending email message.', 'error');
-	drupal_set_message(t('We have received your soul science and concept map proposal. We will get back to you soon.'), 'status');
+		\Drupal::messenger()->addError('Error sending email message.');
+	\Drupal::messenger()->addStatus(t('We have received your soul science and concept map proposal. We will get back to you soon.'));
 	drupal_goto('');
 }

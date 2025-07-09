@@ -2,11 +2,11 @@
 // $Id$
 function science_and_concept_map_download_full_project()
 {
-	global $user;
+	$user = \Drupal::currentUser();
 	$id = arg(3);
 	$root_path = science_and_concept_map_path();
 	//var_dump($root_path);die;
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $id);
 	$science_and_concept_map_q = $query->execute();
@@ -17,14 +17,14 @@ function science_and_concept_map_download_full_project()
 	/* creating zip archive on the server */
 	$zip = new ZipArchive();
 	$zip->open($zip_filename, ZipArchive::CREATE);
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $id);
 	$science_and_concept_map_udc_q = $query->execute();
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $id);
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->condition('proposal_id', $id);
 	$project_files = $query->execute();
@@ -62,16 +62,16 @@ function science_and_concept_map_download_full_project()
 		}
 	} //$zip_file_count > 0
 	else {
-		drupal_set_message("There are no science and concept map project in this proposal to download", 'error');
+		\Drupal::messenger()->addError("There are no science and concept map project in this proposal to download");
 		drupal_goto('science-and-concept-map-project/full-download/project');
 	}
 }
 function science_and_concept_map_download_completed_project()
 {
-		global $user;
+		$user = \Drupal::currentUser();
 	$id = arg(3);
 	$root_path = science_and_concept_map_path();
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $id);
 	$science_and_concept_map_q = $query->execute();
@@ -82,14 +82,14 @@ function science_and_concept_map_download_completed_project()
 	/* creating zip archive on the server */
 	$zip = new ZipArchive();
 	$zip->open($zip_filename, ZipArchive::CREATE);
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $id);
 	$science_and_concept_map_udc_q = $query->execute();
-	$query = db_select('soul_science_and_concept_map_proposal');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
 	$query->condition('id', $id);
-	$query = db_select('soul_science_and_concept_map_submitted_abstracts_file');
+	$query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->fields('soul_science_and_concept_map_submitted_abstracts_file');
 	$query->condition('proposal_id', $id);
 	$project_files = $query->execute();
@@ -126,7 +126,7 @@ function science_and_concept_map_download_completed_project()
 		}
 	} //$zip_file_count > 0
 	else {
-		drupal_set_message("There are science and concept map project in this proposal to download", 'error');
+		\Drupal::messenger()->addError("There are science and concept map project in this proposal to download");
 		drupal_goto('science-and-concept-map-project/full-download/project');
 	}
 }
