@@ -21,6 +21,10 @@ use Drupal\Core\Database\Database;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Mail\MailManager;
 use Drupal\user\Entity\User;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Ajax\HtmlCommand;
+
 
 class ScienceAndConceptMapProposalForm extends FormBase {
 
@@ -317,53 +321,74 @@ class ScienceAndConceptMapProposalForm extends FormBase {
     //   '#tree' => TRUE,
     //   '#validated' => TRUE,
     // ];
-  
-$software_version_options = _soul_list_of_software_version();
-$form['software_version'] = [
-  '#type' => 'select',
-  '#title' => t('Select Software'),
-  '#options' => $software_version_options,
-  '#required' => TRUE,
-  '#ajax' => [
-    'callback' => '::ajax_solver_used_callback',
-    'wrapper' => 'ajax-solver-replace', // Ensure this matches the prefix/suffix wrapper ID
-  ],
-];
+  /**********************************************Soul Software info******************************************************************8 */
 
-$software_version_id = $form_state->getValue('software_version') ?? key($software_version_options);
+  $software_version_options = _soul_list_of_software_version();
 
-$form['software_version_no'] = [
-  '#type' => 'select',
-  '#title' => t('Select the Software Version Number to be used'),
-  '#options' => _soul_list_of_software_version_details($software_version_id),
-  '#default_value' => 0,
-  '#prefix' => '<div id="ajax-solver-replace">',
-  '#suffix' => '</div>',
-  '#required' => TRUE,
-];
+  $form['category'] = [
+    '#type' => 'select',
+    '#title' => $this->t('Select Category'),
+    '#options' => _soul_list_of_category(),
+    '#required' => TRUE,
+  ];
 
-// AJAX callback function
+  $form['sub_category'] = [
+    '#type' => 'select',
+    '#title' => $this->t('Select Sub Category for 3D Modeling Project'),
+    '#options' => _soul_list_of_sub_category(),
+    '#states' => [
+      'visible' => [
+        ':input[name="category"]' => ['value' => '3D Modeling Project'],
+      ],
+    ],
+  ];
 
-    $form['other_software_version_no'] = [
-      '#type' => 'textfield',
-      '#title' => t('Enter your answer'),
-      '#size' => 100,
-      '#attributes' => [
-        'placeholder' => t('Enter your answer')
-        ],
-      '#states' => [
-        'visible' => [
-          ':input[name="software_version_no"]' => [
-            'value' => 'Another'
-            ]
-          ]
-        ],
-    ];
-    $form['second_software'] = [
-      '#type' => 'select',
-      '#title' => t('Select Second Software (If applicable)'),
-      '#options' => _soul_list_of_second_software_version(),
-    ];
+  $form['software_version'] = [
+    '#type' => 'select',
+    '#title' => $this->t('Select Software'),
+    '#options' => $software_version_options,
+    '#required' => TRUE,
+    '#ajax' => [
+      'callback' => '::ajaxSolverUsedCallback',  // If in class
+      'wrapper' => 'ajax-solver-replace',
+      'event' => 'change',
+    ],
+  ];
+
+  $software_version_id = $form_state->getValue('software_version') ?? key($software_version_options);
+
+  $form['software_version_no'] = [
+    '#type' => 'select',
+    '#title' => $this->t('Select the Software Version Number to be used'),
+    '#options' => _soul_list_of_software_version_details($software_version_id),
+    '#default_value' => 0,
+    '#prefix' => '<div id="ajax-solver-replace">',
+    '#suffix' => '</div>',
+    '#required' => TRUE,
+  ];
+
+  $form['other_software_version_no'] = [
+    '#type' => 'textfield',
+    '#title' => $this->t('Enter your answer'),
+    '#size' => 100,
+    '#attributes' => [
+      'placeholder' => $this->t('Enter your answer'),
+    ],
+    '#states' => [
+      'visible' => [
+        ':input[name="software_version_no"]' => ['value' => 'Another'],
+      ],
+    ],
+  ];
+
+  $form['second_software'] = [
+    '#type' => 'select',
+    '#title' => $this->t('Select Second Software (If applicable)'),
+    '#options' => _soul_list_of_second_software_version(),
+  ];
+
+ /**********************************************Soul Software info end******************************************************************8 */
+
     /************** */
     $form['is_ncert_book'] = [
       '#type' => 'radios',
@@ -374,7 +399,7 @@ $form['software_version_no'] = [
       ],
       '#required' => TRUE,
     ];
-    /**************************************** */
+    /*******************Book info********************* */
     $form['preference1'] = [
       '#type' => 'fieldset',
       '#title' => t('Details of Textbook'),
@@ -393,7 +418,11 @@ $form['software_version_no'] = [
       '#title' => t('Title of the book'),
       '#size' => 30,
       '#maxlength' => 100,
-      '#required' => TRUE,
+      '#states' => [
+    'required' => [
+      ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+    ],
+  ],
       '#validated' => TRUE,
     ];
     $form['preference1']['author1'] = [
@@ -410,7 +439,11 @@ $form['software_version_no'] = [
       '#title' => t('ISBN No'),
       '#size' => 30,
       '#maxlength' => 25,
-      '#required' => TRUE,
+      '#states' => [
+    'required' => [
+      ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+    ],
+  ],
       '#validated' => TRUE,
       // '#required' => TRUE
       // '#value' => $row1->isbn,
@@ -421,7 +454,11 @@ $form['software_version_no'] = [
       '#title' => t('Publisher & Place'),
       '#size' => 30,
       '#maxlength' => 50,
-      '#required' => TRUE,
+      '#states' => [
+    'required' => [
+      ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+    ],
+  ],
       '#validated' => TRUE,
       // '#required' => TRUE
       //'#value' => $row1->publisher,
@@ -431,7 +468,11 @@ $form['software_version_no'] = [
       '#title' => t('Edition'),
       '#size' => 4,
       '#maxlength' => 2,
-      '#required' => TRUE,
+      '#states' => [
+    'required' => [
+      ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+    ],
+  ],
       '#validated' => TRUE,
       // '#required' => TRUE
       //'#value' => $row1->edition,
@@ -441,11 +482,16 @@ $form['software_version_no'] = [
       '#title' => t('Year of publication'),
       '#size' => 4,
       '#maxlength' => 4,
-      '#required' => TRUE,
+      '#states' => [
+    'required' => [
+      ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+    ],
+  ],
       '#validated' => TRUE,
       // '#required' => TRUE
       //'#value' => $row1->year,
     ];
+     /******************book info end********************* */
     $form['year_of_study'] = [
       '#type' => 'select',
       '#title' => t('The project is suitable for class (school education)/year of study(college education) '),
@@ -455,7 +501,7 @@ $form['software_version_no'] = [
 		'#tree' => TRUE,
       '#required' => TRUE,
     ];
-    /*************************************** */
+   
     $form['project_title'] = [
       '#type' => 'textfield',
       '#title' => t('Project Title'),
@@ -549,14 +595,26 @@ $form['software_version_no'] = [
 
     return $form;
   }
-  public function ajax_solver_used_callback(array &$form, FormStateInterface $form_state) {
-  
-    $software_version_id = $form_state->getValue('software_version') ?? key($software_version_options);
-    $software_version_options = _soul_list_of_software_version();
-      $form['software_version_no']['#invisible'] = ($software_version_id = 7);
+  /**
+   * AJAX callback for the software version select element.
+   */public function ajaxSolverUsedCallback(array &$form, FormStateInterface $form_state) {
+  $software_version_id = $form_state->getValue('software_version') ?? key(_soul_list_of_software_version());
 
-  return $form['software_version_no'];
+  if ($software_version_id != 7) {
+    $form['software_version_no']['#options'] = _soul_list_of_software_version_details($software_version_id);
+    $response = new AjaxResponse();
+    $response->addCommand(new ReplaceCommand('#ajax-solver-replace', $form['software_version_no']));
+    $response->addCommand(new HtmlCommand('#ajax-solver-text-replace', ''));
+  } else {
+    $rendered_other = \Drupal::service('renderer')->render($form['other_software_version_no']);
+    $response = new AjaxResponse();
+    $response->addCommand(new HtmlCommand('#ajax-solver-replace', ''));
+    $response->addCommand(new HtmlCommand('#ajax-solver-text-replace', $rendered_other));
   }
+
+  return $response;
+}
+
   public function validateForm(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
     if (preg_match('/[\^£$%&*()}{@#~?><>.:;`|=_+¬]/', $form_state->getValue([
       'contributor_name'
@@ -869,9 +927,12 @@ $form['software_version_no'] = [
     ];
     //var_dump($args);die;
     //var_dump($result);die;
-    $result1 = \Drupal::database()->query($result, $args);
-    //var_dump($args);die;
-    $proposal_id = $result1;
+    // $result1 = \Drupal::database()->query($result, $args);
+$proposal_id = \Drupal::database()
+  ->insert('soul_science_and_concept_map_proposal')
+  ->fields($args)
+  ->execute();
+
     /* inserting first book preference */
     if ($form_state->getValue(['book1'])) {
       $bk1 = trim($form_state->getValue(['book1']));
@@ -918,11 +979,11 @@ $form['software_version_no'] = [
           $query = "UPDATE {soul_science_and_concept_map_proposal} SET abstractfilepath = :abstractfilepath WHERE id = :id";
           $args = [
             ":abstractfilepath" => $dest_path . $_FILES['files']['name'][$file_form_name],
-            ":id" => $result1,
+            ":id" => $proposal_id,
           ];
 
           $updateresult = \Drupal::database()->query($query, $args);
-          //var_dump($args);die;
+       
           \Drupal::messenger()->addStatus($file_name . ' uploaded successfully.');
         } //move_uploaded_file($_FILES['files']['tmp_name'][$file_form_name], $root_path . $dest_path . $_FILES['files']['name'][$file_form_name])
         else {
@@ -930,29 +991,33 @@ $form['software_version_no'] = [
         }
       } //$file_name
     } //$_FILES['files']['name'] as $file_form_name => $file_name
-    if (!$result1) {
+    if (!$proposal_id) {
       \Drupal::messenger()->addError(t('Error receiving your proposal. Please try again.'));
       return;
     } //!$proposal_id
 	/* sending email */
-    $email_to = $user->getMail();
-    $form = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
-    $bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
-    $cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
-    $params['science_and_concept_map_proposal_received']['result1'] = $result1;
-    $params['science_and_concept_map_proposal_received']['user_id'] = $user->id();
-    $params['science_and_concept_map_proposal_received']['headers'] = [
-      'From' => $form,
-      'MIME-Version' => '1.0',
-      'Content-Type' => 'text/plain; charset=UTF-8; format=flowed; delsp=yes',
-      'Content-Transfer-Encoding' => '8Bit',
-      'X-Mailer' => 'Drupal',
-      'Cc' => $cc,
-      'Bcc' => $bcc,
-    ];
-    if (!\Drupal::service('plugin.manager.mail')->mail('science_and_concept_map', 'science_and_concept_map_proposal_received', $email_to, user_preferred_language($user), $params, $form, TRUE)) {
-      \Drupal::messenger()->addError('Error sending email message.');
-    }
+    // $email_to = $user->getEmail();
+    // $language = $user->getPreferredLangcode();
+
+    // // var_dump($email_to);die;
+    // $form = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+    // $bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+    // $cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
+    // $params['science_and_concept_map_proposal_received']['proposal_id'] = $proposal_id;
+    // $params['science_and_concept_map_proposal_received']['user_id'] = $user->id();
+    // $params['science_and_concept_map_proposal_received']['headers'] = [
+    //   'From' => $form,
+    //   'MIME-Version' => '1.0',
+    //   'Content-Type' => 'text/plain; charset=UTF-8; format=flowed; delsp=yes',
+    //   'Content-Transfer-Encoding' => '8Bit',
+    //   'X-Mailer' => 'Drupal',
+    //   'Cc' => $cc,
+    //   'Bcc' => $bcc,
+    // ];
+    // if (!\Drupal::service('plugin.manager.mail')->mail('science_and_concept_map', 'science_and_concept_map_proposal_received', $email_to, $user->user_preferred_language(), $params, $form, TRUE)) {
+    //   \Drupal::messenger()->addError('Error sending email message.');
+    // }
+      //  var_dump(_scmp_dir_name);die;
     $response = new RedirectResponse(Url::fromRoute('<front>')->toString());
     // Send the redirect response
     $response->send();
@@ -961,4 +1026,5 @@ $form['software_version_no'] = [
   }
 
 }
+
 ?>
