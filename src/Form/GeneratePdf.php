@@ -26,7 +26,14 @@ class GeneratePdf extends FormBase {
     require($mpath . '/pdf/phpqrcode/qrlib.php');
     $user = \Drupal::currentUser();
     $x = $user->uid;
-    $proposal_id = arg(3);
+    // Retrieve proposal ID from query or legacy path segment.
+    $request = \Drupal::request();
+    $proposal_id = (int) ($request->query->get('proposal_id') ?? 0);
+    if (!$proposal_id) {
+      // Legacy fallback if path contains the ID.
+      $path_segments = array_values(array_filter(explode('/', $request->getPathInfo())));
+      $proposal_id = isset($path_segments[ count($path_segments) - 1 ]) ? (int) $path_segments[ count($path_segments) - 1 ] : 0;
+    }
     $query3 = \Drupal::database()->query("SELECT * FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND id=:proposal_id", [
       ':proposal_id' => $proposal_id
       ]);

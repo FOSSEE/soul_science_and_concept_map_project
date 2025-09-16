@@ -20,21 +20,21 @@ science_and_concept_map.proposal_all:
   requirements:
     _permission: 'soul science and concept map manage proposal'
 science_and_concept_map.proposal_approval_form:
-  path: /science-and-concept-map-project/manage-proposal/approve
+  path: /science-and-concept-map-project/manage-proposal/approve/{id}
   defaults:
     _title: 'Approve Proposal'
     _form: \Drupal\science_and_concept_map\Form\ScienceAndConceptMapProposalApprovalForm
   requirements:
     _permission: 'soul science and concept map manage proposal'
 science_and_concept_map.proposal_edit_form:
-  path: /science-and-concept-map-project/manage-proposal/edit
+  path: /science-and-concept-map-project/manage-proposal/edit/{id}
   defaults:
     _title: 'Edit Proposal'
     _form: \Drupal\science_and_concept_map\Form\ScienceAndConceptMapProposalEditForm
   requirements:
     _permission: 'soul science and concept map manage proposal'
 science_and_concept_map.proposal_status_form:
-  path: /science-and-concept-map-project/manage-proposal/status
+  path: /science-and-concept-map-project/manage-proposal/status/{id}
   defaults:
     _title: 'Proposal Status'
     _form: \Drupal\science_and_concept_map\Form\ScienceAndConceptMapProposalStatusForm
@@ -106,14 +106,14 @@ science_and_concept_map.download_project:
   requirements:
     _permission: 'soul science and concept map download code'
 science_and_concept_map.download_completed_project:
-  path: /science-and-concept-map-project/full-download/experiment
+  path: /science-and-concept-map-project/full-download/experiment/{id}
   defaults:
     _title: 'Code Download'
     _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::science_and_concept_map_download_completed_project'
   requirements:
     _permission: 'soul science and concept map approve code'
 science_and_concept_map.download_full_project:
-  path: /science-and-concept-map-project/full-download/project
+  path: /science-and-concept-map-project/full-download/project/{id}
   defaults:
     _title: 'Code Download'
     _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::science_and_concept_map_download_full_project'
@@ -141,14 +141,14 @@ science_and_concept_map.run_form:
   requirements:
     _permission: 'soul science and concept map download code'
 science_and_concept_map.download_upload_file:
-  path: /science-and-concept-map-project/download/abstract-file
+  path: /science-and-concept-map-project/download/abstract-file/{proposal_id}
   defaults:
     _title: 'Download user defined compound file'
     _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::science_and_concept_map_download_upload_file'
   requirements:
     _permission: 'soul science and concept map download code'
 science_and_concept_map.soul_science_and_concept_map_project_files:
-  path: /science-and-concept-map-project/download/project-file
+  path: /science-and-concept-map-project/download/project-file/{proposal_id}
   defaults:
     _title: 'Download Project file'
     _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::soul_science_and_concept_map_project_files'
@@ -176,9 +176,9 @@ science_and_concept_map.generate_pdf:
   requirements:
     _permission: 'generate certificate'
 science_and_concept_map.verify_certificates_verify_certificates:
-  path: /science-and-concept-map-project/certificates/verify
+  path: /science-and-concept-map-project/certificates/verify/{qr_code}
   defaults:
-    qr_code: verify_certificates
+    qr_code: ''
     _title: 'Certificate Verification'
     _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::verify_certificates'
   requirements:

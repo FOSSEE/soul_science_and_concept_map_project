@@ -1,7 +1,11 @@
 <?php
+
+use Drupal\Core\Routing\TrustedRedirectResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Core\Url;
 // $Id$
-require_once('general_deletion.inc');
-require_once('email.inc');
+// require_once('general_deletion.inc');
+// require_once('email.inc');
 /**
  * Implementation of hook_menu().
  */
@@ -657,17 +661,15 @@ function science_and_concept_map_get_proposal()
 	$user = \Drupal::currentUser();
 	$query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
 	$query->fields('soul_science_and_concept_map_proposal');
-	$query->condition('uid', $user->uid);
+    $query->condition('uid', $user->id());
 	$query->orderBy('id', 'DESC');
 	$query->range(0, 1);
 	$proposal_q = $query->execute();
 	$proposal_data = $proposal_q->fetchObject();
 	if (!$proposal_data)
 	{
-		\Drupal::messenger()->addError("You do not have any approved soul science and concept map proposal. Please propose the science and concept map proposal");
-		// drupal_goto('');
-		return new TrustedRedirectResponse('/');
-		// return '';
+    \Drupal::messenger()->addError("You do not have any science and concept map proposal yet. Please submit a proposal.");
+    return FALSE;
 	} //!$proposal_data
 	switch ($proposal_data->approval_status)
 	{

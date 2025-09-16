@@ -13,19 +13,23 @@ function _list_science_and_concept_map_certificates()
 			$query3 = \Drupal::database()->query("SELECT id,project_guide_name,project_guide_university,project_title FROM 
 soul_science_and_concept_map_proposal WHERE project_guide_name != '' AND project_guide_university != '' AND approval_status=3");
 			$i = 1;
-			while ($search_data3 = $query3->fetchObject()) {
-					// @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $search_rows[] = array(
-// 						$i,
-// 						$search_data3->project_title,
-// 						$search_data3->project_guide_name,
-// 						l('Download Certificate', 'science-and-concept-map-project/certificates-custom/pdf/' . $search_data3->id)
-// 					);
+				while ($search_data3 = $query3->fetchObject()) {
+					$download_link = \Drupal\Core\Link::fromTextAndUrl(
+					  'Download Certificate',
+					  \Drupal\Core\Url::fromRoute('science_and_concept_map.generate_pdf', [], [
+					    'query' => ['proposal_id' => $search_data3->id],
+					  ])
+					)->toString();
+
+					$search_rows[] = array(
+						$i,
+						$search_data3->project_title,
+						$search_data3->project_guide_name,
+						$download_link
+					);
 
 					$i++;
-				 //$search_data3->id
-			} //$search_data3 = $query3->fetchObject()
+				} //$search_data3 = $query3->fetchObject()
 			if ($search_rows) {
 				$search_header = array(
 					'No',
@@ -33,20 +37,11 @@ soul_science_and_concept_map_proposal WHERE project_guide_name != '' AND project
 					'Project Guide Name',
 					'Download Certificates'
 				);
-				// @FIXME
-// theme() has been renamed to _theme() and should NEVER be called directly.
-// Calling _theme() directly can alter the expected output and potentially
-// introduce security issues (see https://www.drupal.org/node/2195739). You
-// should use renderable arrays instead.
-// 
-// 
-// @see https://www.drupal.org/node/2195739
-// $output        = theme('table', array(
-// 					'header' => $search_header,
-// 					'rows' => $search_rows
-// 				));
-
-				return $output;
+					return [
+					  '#type' => 'table',
+					  '#header' => $search_header,
+					  '#rows' => $search_rows,
+					];
 			} //$search_rows
 			else {
 				echo ("Error");

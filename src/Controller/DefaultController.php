@@ -6,21 +6,15 @@
 namespace Drupal\science_and_concept_map\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Form\FormBase;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\Response;
-use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Database\Database;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\Core\File\FileSystemInterface;
-use Drupal\Service;
-use Drupal\user\Entity\User;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Routing\TrustedRedirectResponse;
+use ZipArchive;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 /**
  * Default controller for the science_and_concept_map module.
@@ -28,6 +22,7 @@ use Drupal\Core\Routing\TrustedRedirectResponse;
 class DefaultController extends ControllerBase {
 
   public function science_and_concept_map_proposal_pending() {
+    //var_dump("hi");die;
     /* get pending proposals to be approved */
     $pending_rows = [];
     $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
@@ -36,20 +31,13 @@ class DefaultController extends ControllerBase {
     $query->orderBy('id', 'DESC');
     $pending_q = $query->execute();
     while ($pending_data = $pending_q->fetchObject()) {
-      $approval_url = Link::fromTextAndUrl('Approve', Url::fromRoute('science_and_concept_map.proposal_approval_form',['id'=>$pending_data->id]))->toString();
-$edit_url =  Link::fromTextAndUrl('Edit', Url::fromRoute('science_and_concept_map.proposal_edit_form',['id'=>$pending_data->id]))->toString();
-$mainLink = t('@linkApprove | @linkReject', array('@linkApprove' => $approval_url, '@linkReject' => $edit_url));
+      $approval_url = Link::fromTextAndUrl('Approve', Url::fromRoute('science_and_concept_map.proposal_approval_form', ['id' => $pending_data->id]))->toString();
+      $edit_url = Link::fromTextAndUrl('Edit', Url::fromRoute('science_and_concept_map.proposal_edit_form', ['id' => $pending_data->id]))->toString();
+      $mainLink = Markup::create($approval_url . ' | ' . $edit_url);
 
-      // @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $pending_rows[$pending_data->id] = array(
-// 			date('d-m-Y', $pending_data->creation_date),
-// 			l($pending_data->name_title . ' ' . $pending_data->contributor_name, 'user/' . $pending_data->uid),
-// 			$pending_data->project_title,
-// 			l('Approve', 'science-and-concept-map-project/manage-proposal/approve/' . $pending_data->id) . ' | ' . l('Edit', 'science-and-concept-map-project/manage-proposal/edit/' . $pending_data->id)
-// 		);
 
 $pending_rows[$pending_data->id] = [
+  
   date('d-m-Y', $pending_data->creation_date),
   
  // Create the link with the user's name as the link text.
@@ -57,13 +45,13 @@ $pending_rows[$pending_data->id] = [
 //   $pending_data->name_title . ' ' . $pending_data->contributor_name,
 //   Url::fromRoute('entity.user.canonical', ['user' => $pending_data->uid])
 // )->toString(),
- Link::fromTextAndUrl($pending_data->contributor_name, Url::fromRoute('entity.user.canonical', ['user' => $pending_data->uid])),
+ Link::fromTextAndUrl($pending_data->contributor_name, Url::fromRoute('entity.user.canonical', ['user' => $pending_data->uid]))->toString(),
 
 
   // Link::fromTextAndUrl($pending_data->name, 'user/' . $pending_data->uid),
   $pending_data->project_title,
   // $pending_data->department,
-  $mainLink 
+   $mainLink 
 
 
   
@@ -74,13 +62,13 @@ $pending_rows[$pending_data->id] = [
 ];
     }    
 
-
+// var_dump($pending_rows);die;
 //$pending_data = $pending_q->fetchObject()
 	/* check if there are any pending proposals */
-    if (!$pending_rows) {
-      \Drupal::messenger()->addStatus(t('There are no pending proposals.'));
-      return '';
-    } //!$pending_rows
+    // if (!$pending_rows) {
+    //   \Drupal::messenger()->addStatus(t('There are no pending proposals.'));
+    //   return '';
+    // } //!$pending_rows
     $pending_header = [
       'Date of Submission',
       'Student Name',
@@ -91,7 +79,7 @@ $pending_rows[$pending_data->id] = [
       '#type' => 'table',
       '#header' => $pending_header,
       '#rows' => $pending_rows,
-      //'#empty' => 'no rows found',
+      '#empty' => 'no rows found',
     ];
   
 
@@ -130,7 +118,7 @@ $pending_rows[$pending_data->id] = [
       else {
         $actual_completion_date = date('d-m-Y', $proposal_data->actual_completion_date);
       }
-      // @FIXME
+    
       // l() expects a Url object, created from a route name or external URI.
       // $proposal_rows[] = array(
       // 			date('d-m-Y', $proposal_data->creation_date),
@@ -142,15 +130,15 @@ $pending_rows[$pending_data->id] = [
       // 		);
 
     
-      $status_url = Link::fromTextAndUrl('Status', Url::fromRoute('science_and_concept_map.proposal_status_form',['id'=>$proposal_data->id]))->toString();
-    $edit_url =  Link::fromTextAndUrl('Edit', Url::fromRoute('science_and_concept_map.proposal_edit_form',['id'=>$proposal_data->id]))->toString();
-    $mainLink = t('@linkApprove | @linkReject', array('@linkApprove' => $status_url, '@linkReject' => $edit_url));
+      $status_url = Link::fromTextAndUrl('Status', Url::fromRoute('science_and_concept_map.proposal_status_form', ['id' => $proposal_data->id]))->toString();
+      $edit_url = Link::fromTextAndUrl('Edit', Url::fromRoute('science_and_concept_map.proposal_edit_form', ['id' => $proposal_data->id]))->toString();
+      $mainLink = Markup::create($status_url . ' | ' . $edit_url);
     
       $proposal_rows[] = array(
           date('d-m-Y', $proposal_data->creation_date),
           // $uid_url = Url::fromRoute('entity.user.canonical', ['user' => $proposal_data->uid]),
           //  $link = Link::fromTextAndUrl($proposal_data->name, $uid_url)->toString(),
-          Link::fromTextAndUrl($proposal_data->contributor_name, Url::fromRoute('entity.user.canonical', ['user' => $proposal_data->uid])),
+          Link::fromTextAndUrl($proposal_data->contributor_name, Url::fromRoute('entity.user.canonical', ['user' => $proposal_data->uid]))->toString(),
       
 
           // Link::fromTextAndUrl($pending_data->name, 'user/' . $pending_data->uid),
@@ -177,7 +165,7 @@ $pending_rows[$pending_data->id] = [
       'Status',
       'Action',
     ];
-    // @FIXME
+    
     // theme() has been renamed to _theme() and should NEVER be called directly.
     // Calling _theme() directly can alter the expected output and potentially
     // introduce security issues (see https://www.drupal.org/node/2195739). You
@@ -234,15 +222,19 @@ $pending_rows[$pending_data->id] = [
         $solution_provider_user_name = '';
       }
       /* setting table row information */
-      // @FIXME
-      // l() expects a Url object, created from a route name or external URI.
-      $pending_solution_rows[] = array(
-                  $proposal_data->lab_title,
-                  $experiment_data->title,
-                  $proposal_data->name,
-                  $solution_provider_user_name,
-                  // l('Edit', 'science-and-concept-map-project/code-approval/approve/' . $pending_solution_data->id)
-              );
+      // Actions: link to approval form (pass solution_id via query).
+      $approve_url = Url::fromRoute('science_and_concept_map.abstract_approval_form', [], [
+        'query' => ['solution_id' => $pending_solution_data->id],
+      ]);
+      $approve_link = Link::fromTextAndUrl('Edit', $approve_url)->toString();
+
+      $pending_solution_rows[] = [
+        $proposal_data->lab_title,
+        $experiment_data->title,
+        $proposal_data->name,
+        $solution_provider_user_name,
+        $approve_link,
+      ];
 
     }
     /* check if there are any pending solutions */
@@ -257,24 +249,12 @@ $pending_rows[$pending_data->id] = [
       'Solution Provider',
       'Actions',
     ];
-    //$output = theme_table($header, $pending_solution_rows);
-    // @FIXME
-    // theme() has been renamed to _theme() and should NEVER be called directly.
-    // Calling _theme() directly can alter the expected output and potentially
-    // introduce security issues (see https://www.drupal.org/node/2195739). You
-    // should use renderable arrays instead.
-    // 
-    // 
-    // @see https://www.drupal.org/node/2195739
-    // $output = theme('table', array(
-    //         'header' => $header,
-    //         'rows' => $pending_solution_rows
-    //     ));
+   
     $output = [
       '#type' => 'table',
-      'header' => $header,
-      'rows' => $pending_solution_rows,
-  ];
+      '#header' => $header,
+      '#rows' => $pending_solution_rows,
+    ];
     return $output;
   }
 
@@ -283,8 +263,7 @@ $pending_rows[$pending_data->id] = [
     $return_html = "";
     $proposal_data = science_and_concept_map_get_proposal();
     if (!$proposal_data) {
-      // drupal_goto('');
-      return;
+      // return $this->redirect('<front>');
     } //!$proposal_data
     //$return_html .= l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload') . '<br />';
 	/* get experiment list */
@@ -301,6 +280,7 @@ $pending_rows[$pending_data->id] = [
 			//return;
 		} //$abstracts_q->is_submitted == 1
 	}*/ //$abstracts_q
+ 
     $query_pro = \Drupal::database()->select('soul_science_and_concept_map_proposal');
     $query_pro->fields('soul_science_and_concept_map_proposal');
     $query_pro->condition('id', $proposal_data->id);
@@ -310,15 +290,9 @@ $pending_rows[$pending_data->id] = [
     $query_pdf->condition('proposal_id', $proposal_data->id);
     $query_pdf->condition('filetype', 'A');
     $abstracts_pdf = $query_pdf->execute()->fetchObject();
-    if ($abstracts_pdf == TRUE) {
-      if ($abstracts_pdf->filename != "NULL" || $abstracts_pdf->filename != "") {
-        $abstract_filename = $abstracts_pdf->filename;
-        //$abstract_filename = l($abstracts_pdf->filename, 'circuit-simulation-project/download/project-file/' . $proposal_data->id);
-      } //$abstracts_pdf->filename != "NULL" || $abstracts_pdf->filename != ""
-      else {
-        $abstract_filename = "File not uploaded";
-      }
-    } //$abstracts_pdf == TRUE
+    if ($abstracts_pdf && $abstracts_pdf->filename != "NULL" && $abstracts_pdf->filename != "") {
+      $abstract_filename = $abstracts_pdf->filename;
+    }
     else {
       $abstract_filename = "File not uploaded";
     }
@@ -327,49 +301,22 @@ $pending_rows[$pending_data->id] = [
     $query_process->condition('proposal_id', $proposal_data->id);
     $query_process->condition('filetype', 'S');
     $abstracts_query_process = $query_process->execute()->fetchObject();
-    if ($abstracts_query_process == TRUE) {
-      if ($abstracts_query_process->filename != "NULL" || $abstracts_query_process->filename != "") {
-        $abstracts_query_process_filename = $abstracts_query_process->filename;
-        //$abstracts_query_process_filename = l($abstracts_query_process->filename, 'circuit-simulation-project/download/project-file/' . $proposal_data->id); 
-      } //$abstracts_query_process->filename != "NULL" || $abstracts_query_process->filename != ""
-      else {
-        $abstracts_query_process_filename = "File not uploaded";
-      }
-      if ($abstracts_q->is_submitted == '') {
-        // @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
-$url = Link::fromTextAndUrl(
-  'Upload Abstract',
-  Url::fromUri('internal:/science-and-concept-map-project/abstract-code/upload')
-)->toString();
-      } //$abstracts_q->is_submitted == ''
-      else {
-        if ($abstracts_q->is_submitted == 1) {
-          $url = "";
-        } //$abstracts_q->is_submitted == 1
-        else {
-          if ($abstracts_q->is_submitted == 0) {
-            // @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $url = l('Edit', 'science-and-concept-map-project/abstract-code/upload');
-$url = Link::fromTextAndUrl(
-  'Edit',
-  Url::fromUri('internal:/science-and-concept-map-project/abstract-code/upload')
-)->toString();
-          }
-        }
-      } //$abstracts_q->is_submitted == 0
-    } //$abstracts_query_process == TRUE
+    if ($abstracts_query_process && $abstracts_query_process->filename != "NULL" && $abstracts_query_process->filename != "") {
+      $abstracts_query_process_filename = $abstracts_query_process->filename;
+    }
     else {
-      // @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $url = l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload');
-$url = Link::fromTextAndUrl(
-  'Upload Abstract',
-  Url::fromUri('internal:/science-and-concept-map-project/abstract-code/upload')
-)->toString();
       $abstracts_query_process_filename = "File not uploaded";
+    }
+
+    $is_submitted = ($abstracts_q && isset($abstracts_q->is_submitted)) ? (string) $abstracts_q->is_submitted : '';
+    if ($is_submitted === '') {
+      $url = Link::fromTextAndUrl('Upload Abstract', Url::fromRoute('science_and_concept_map.upload_abstract_code_form'))->toString();
+    }
+    elseif ($is_submitted == '1') {
+      $url = '';
+    }
+    else { // '0'
+      $url = Link::fromTextAndUrl('Edit', Url::fromRoute('science_and_concept_map.upload_abstract_code_form'))->toString();
     }
     $return_html .= '<strong>Contributor Name:</strong><br />' . $proposal_data->name_title . ' ' . $proposal_data->contributor_name . '<br /><br />';
     $return_html .= '<strong>Title of the science and concept map Project:</strong><br />' . $proposal_data->project_title . '<br /><br />';
@@ -386,9 +333,8 @@ $url = Link::fromTextAndUrl(
     ];
   }
 
-  public function science_and_concept_map_download_completed_project() {
+  public function science_and_concept_map_download_completed_project($id) {
     $user = \Drupal::currentUser();
-    $id = arg(3);
     $root_path = science_and_concept_map_path();
     $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
     $query->fields('soul_science_and_concept_map_proposal');
@@ -419,40 +365,21 @@ $url = Link::fromTextAndUrl(
     $zip_file_count = $zip->numFiles;
     $zip->close();
     if ($zip_file_count > 0) {
-      if ($user->uid) {
-        /* download zip file */
-        header('Content-Type: application/zip');
-        header('Content-disposition: attachment; filename="' . str_replace(' ', '_', $science_and_concept_map_data->project_title) . '.zip"');
-        header('Content-Length: ' . filesize($zip_filename));
-        //ob_end_flush();
-        ob_clean();
-        //flush();
-        readfile($zip_filename);
-        unlink($zip_filename);
-      } //$user->uid
-      else {
-        header('Content-Type: application/zip');
-        header('Content-disposition: attachment; filename="' . str_replace(' ', '_', $science_and_concept_map_data->project_title) . '.zip"');
-        header('Content-Length: ' . filesize($zip_filename));
-        header("Content-Transfer-Encoding: binary");
-        header('Expires: 0');
-        header('Pragma: no-cache');
-        //ob_end_flush();
-        ob_clean();
-        //flush();
-        readfile($zip_filename);
-        unlink($zip_filename);
-      }
-    } //$zip_file_count > 0
-    else {
-      \Drupal::messenger()->addError("There are science and concept map project in this proposal to download");
-      drupal_goto('science-and-concept-map-project/full-download/project');
+      $response = new BinaryFileResponse($zip_filename);
+      $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT;
+      $safe_name = str_replace(' ', '_', $science_and_concept_map_data->project_title) . '.zip';
+      $response->setContentDisposition($disposition, $safe_name);
+      $response->headers->set('Content-Type', 'application/zip');
+      $response->deleteFileAfterSend(true);
+      return $response;
     }
+    \Drupal::messenger()->addError("There are science and concept map project in this proposal to download");
+    return new RedirectResponse(Url::fromRoute('science_and_concept_map.proposal_all')->toString());
   }
 
-  public function science_and_concept_map_download_full_project() {
+  public function science_and_concept_map_download_full_project($id) {
+    // Drupal 10: accept route param and return a BinaryFileResponse.
     $user = \Drupal::currentUser();
-    $id = arg(3);
     $root_path = science_and_concept_map_path();
     //var_dump($root_path);die;
     $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
@@ -483,37 +410,17 @@ $url = Link::fromTextAndUrl(
     $zip_file_count = $zip->numFiles;
     $zip->close();
     if ($zip_file_count > 0) {
-      if ($user->uid) {
-        /* download zip file */
-        header('Content-Type: application/zip');
-        header('Content-disposition: attachment; filename="' . str_replace(' ', '_', $science_and_concept_map_data->project_title) . '.zip"');
-        header('Content-Length: ' . filesize($zip_filename));
-        ob_clean();
-        readfile($zip_filename);
-        unlink($zip_filename);
-        /*flush();
-			ob_end_flush();
-			ob_clean();*/
-
-      } //$user->uid
-      else {
-        header('Content-Type: application/zip');
-        header('Content-disposition: attachment; filename="' . str_replace(' ', '_', $science_and_concept_map_data->project_title) . '.zip"');
-        header('Content-Length: ' . filesize($zip_filename));
-        header("Content-Transfer-Encoding: binary");
-        header('Expires: 0');
-        header('Pragma: no-cache');
-        //ob_end_flush();
-        ob_clean();
-        //flush();
-        readfile($zip_filename);
-        unlink($zip_filename);
-      }
-    } //$zip_file_count > 0
-    else {
-      \Drupal::messenger()->addError("There are no science and concept map project in this proposal to download");
-      drupal_goto('science-and-concept-map-project/full-download/project');
+      $response = new BinaryFileResponse($zip_filename);
+      $disposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT;
+      $safe_name = str_replace(' ', '_', $science_and_concept_map_data->project_title) . '.zip';
+      $response->setContentDisposition($disposition, $safe_name);
+      $response->headers->set('Content-Type', 'application/zip');
+      $response->deleteFileAfterSend(true);
+      return $response;
     }
+    // No files found; redirect to proposals listing with message.
+    \Drupal::messenger()->addError("There are no science and concept map project in this proposal to download");
+    return new RedirectResponse(Url::fromRoute('science_and_concept_map.proposal_all')->toString());
   }
 
   public function science_and_concept_map_completed_proposals_all() {
@@ -543,15 +450,17 @@ $url = Link::fromTextAndUrl(
         $soul_project_files = $query1->execute();
         $soul_project_abstract = $soul_project_files->fetchObject();
         $completion_date = date("Y", $row->actual_completion_date);
-        // @FIXME
-        // l() expects a Url object, created from a route name or external URI.
-        // $preference_rows[] = array(
-        // 				$i,
-        // 				l($row->project_title, "science-and-concept-map-project/soul-science-and-concept-map-run/" . $row->id),
-        // 				$row->contributor_name,
-        // 				$row->university,
-        // 				$completion_date
-        // 			);
+        // Project link to Run page.
+        $run_link = Link::fromTextAndUrl($row->project_title, Url::fromRoute('science_and_concept_map.run_form', [], [
+          'query' => ['id' => $row->id],
+        ]))->toString();
+        $preference_rows[] = [
+          $i,
+          $run_link,
+          $row->contributor_name,
+          $row->university,
+          $completion_date,
+        ];
 
         $i--;
       } //$row = $result->fetchObject()
@@ -562,18 +471,11 @@ $url = Link::fromTextAndUrl(
         'University / Institute',
         'Year of Completion',
       ];
-      // @FIXME
-      // theme() has been renamed to _theme() and should NEVER be called directly.
-      // Calling _theme() directly can alter the expected output and potentially
-      // introduce security issues (see https://www.drupal.org/node/2195739). You
-      // should use renderable arrays instead.
-      // 
-      // 
-      // @see https://www.drupal.org/node/2195739
-      // $output .= theme('table', array(
-      // 			'header' => $preference_header,
-      // 			'rows' => $preference_rows
-      // 		));
+      $output = [
+        '#type' => 'table',
+        '#header' => $preference_header,
+        '#rows' => $preference_rows,
+      ];
 
     }
     return $output;
@@ -614,18 +516,7 @@ $url = Link::fromTextAndUrl(
         'Institute',
         'Year',
       ];
-      // @FIXME
-      // theme() has been renamed to _theme() and should NEVER be called directly.
-      // Calling _theme() directly can alter the expected output and potentially
-      // introduce security issues (see https://www.drupal.org/node/2195739). You
-      // should use renderable arrays instead.
-      // 
-      // 
-      // @see https://www.drupal.org/node/2195739
-      // $page_content .= theme('table', array(
-      // 			'header' => $preference_header,
-      // 			'rows' => $preference_rows
-      // 		));
+      // Build as render array table.
       $page_content =  [
         '#type' => 'table',
         '#header' => $preference_header,
@@ -636,8 +527,7 @@ $url = Link::fromTextAndUrl(
     return $page_content;
   }
 
-  public function science_and_concept_map_download_upload_file() {
-    $proposal_id = arg(3);
+  public function science_and_concept_map_download_upload_file($proposal_id) {
     $root_path = science_and_concept_map_document_path();
     $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
     $query->fields('soul_science_and_concept_map_proposal');
@@ -645,28 +535,15 @@ $url = Link::fromTextAndUrl(
     $query->range(0, 1);
     $result = $query->execute();
     $science_and_concept_map_upload_file = $result->fetchObject();
+    $absolute = $root_path . $science_and_concept_map_upload_file->abstractfilepath;
     $samplecodename = substr($science_and_concept_map_upload_file->abstractfilepath, strrpos($science_and_concept_map_upload_file->abstractfilepath, '/') + 1);
-    ob_clean();
-    header("Pragma: public");
-    header("Expires: 0");
-    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-    header("Cache-Control: public");
-    header("Content-Description: File Transfer");
-    header('Content-Type: application/pdf');
-    header('Content-disposition: attachment; filename="' . $samplecodename . '"');
-    header('Content-Length: ' . filesize($root_path . $science_and_concept_map_upload_file->abstractfilepath));
-    header("Content-Transfer-Encoding: binary");
-    header('Expires: 0');
-    header('Pragma: no-cache');
-    ob_clean();
-    readfile($root_path . $science_and_concept_map_upload_file->abstractfilepath);
-    //ob_end_flush();
-
-    //flush();
+    $response = new BinaryFileResponse($absolute);
+    $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $samplecodename);
+    $response->headers->set('Content-Type', 'application/pdf');
+    return $response;
   }
 
-  public function soul_science_and_concept_map_project_files() {
-    $proposal_id = arg(3);
+  public function soul_science_and_concept_map_project_files($proposal_id) {
     $root_path = science_and_concept_map_document_path();
     $query = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
     $query->fields('soul_science_and_concept_map_submitted_abstracts_file');
@@ -681,22 +558,11 @@ $url = Link::fromTextAndUrl(
     $science_and_concept_map = $result1->fetchObject();
     $directory_name = $science_and_concept_map->directory_name . '/project_files/';
     $samplecodename = $soul_science_and_concept_map_project_files->filename;
-    ob_clean();
-    header("Pragma: public");
-    header("Expires: 0");
-    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-    header("Cache-Control: public");
-    header("Content-Description: File Transfer");
-    header("Content-Type: application/pdf");
-    header('Content-disposition: attachment; filename="' . $samplecodename . '"');
-    header("Content-Length: " . filesize($root_path . $directory_name . $samplecodename));
-    header("Content-Transfer-Encoding: binary");
-    header("Expires: 0");
-    header("Pragma: no-cache");
-    ob_clean();
-    readfile($root_path . $directory_name . $samplecodename);
-    //ob_end_flush();
-    //ob_clean();
+    $absolute = $root_path . $directory_name . $samplecodename;
+    $response = new BinaryFileResponse($absolute);
+    $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $samplecodename);
+    $response->headers->set('Content-Type', 'application/pdf');
+    return $response;
   }
 
   public function _list_science_and_concept_map_certificates() {
@@ -713,18 +579,20 @@ $url = Link::fromTextAndUrl(
 soul_science_and_concept_map_proposal WHERE project_guide_name != '' AND project_guide_university != '' AND approval_status=3");
         $i = 1;
         while ($search_data3 = $query3->fetchObject()) {
-          // @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $search_rows[] = array(
-// 						$i,
-// 						$search_data3->project_title,
-// 						$search_data3->project_guide_name,
-// 						l('Download Certificate', 'science-and-concept-map-project/certificates-custom/pdf/' . $search_data3->id)
-// 					);
-
+          $download_link = Link::fromTextAndUrl(
+            'Download Certificate',
+            Url::fromRoute('science_and_concept_map.generate_pdf', [], [
+              'query' => ['proposal_id' => $search_data3->id],
+            ])
+          )->toString();
+          $search_rows[] = [
+            $i,
+            $search_data3->project_title,
+            $search_data3->project_guide_name,
+            $download_link,
+          ];
           $i++;
-          //$search_data3->id
-        } //$search_data3 = $query3->fetchObject()
+        }
         if ($search_rows) {
           $search_header = [
             'No',
@@ -732,20 +600,11 @@ soul_science_and_concept_map_proposal WHERE project_guide_name != '' AND project
             'Project Guide Name',
             'Download Certificates',
           ];
-          // @FIXME
-          // theme() has been renamed to _theme() and should NEVER be called directly.
-          // Calling _theme() directly can alter the expected output and potentially
-          // introduce security issues (see https://www.drupal.org/node/2195739). You
-          // should use renderable arrays instead.
-          // 
-          // 
-          // @see https://www.drupal.org/node/2195739
-          // $output        = theme('table', array(
-          // 					'header' => $search_header,
-          // 					'rows' => $search_rows
-          // 				));
-
-          return $output;
+          return [
+            '#type' => 'table',
+            '#header' => $search_header,
+            '#rows' => $search_rows,
+          ];
         } //$search_rows
         else {
           echo ("Error");
@@ -761,17 +620,16 @@ soul_science_and_concept_map_proposal WHERE project_guide_name != '' AND project
     }
   }
 
-  public function verify_certificates($qr_code = 0) {
-    $qr_code = arg(3);
-    $page_content = "";
+  public function verify_certificates($qr_code = '') {
     if ($qr_code) {
       $page_content = verify_qrcode_fromdb($qr_code);
-    } //$qr_code
-    else {
-      $verify_certificates_form = drupal_get_form("verify_certificates_form");
-      $page_content = drupal_render($verify_certificates_form);
+      return [
+        '#type' => 'markup',
+        '#markup' => $page_content,
+      ];
     }
-    return $page_content;
+    // Build the form via FormBuilder; returns a render array.
+    return \Drupal::formBuilder()->getForm('verify_certificates_form');
   }
 
 }

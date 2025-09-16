@@ -16,13 +16,17 @@ function _list_science_and_concept_map_certificates()
 			));
 			while ($search_data3 = $query3->fetchObject()) {
 				if ($search_data3->id) {
-					// @FIXME
-// l() expects a Url object, created from a route name or external URI.
-// $search_rows[] = array(
-// 						$search_data3->project_title,
-// 						$search_data3->contributor_name,
-// 						l('Download Certificate', 'science-and-concept-map-project/certificates/generate-pdf/' . $search_data3->id)
-// 					);
+					$download_link = \Drupal\Core\Link::fromTextAndUrl(
+					  'Download Certificate',
+					  \Drupal\Core\Url::fromRoute('science_and_concept_map.generate_pdf', [], [
+					    'query' => ['proposal_id' => $search_data3->id],
+					  ])
+					)->toString();
+					$search_rows[] = array(
+						$search_data3->project_title,
+						$search_data3->contributor_name,
+						$download_link
+					);
 
 				} //$search_data3->id
 			} //$search_data3 = $query3->fetchObject()
@@ -32,20 +36,11 @@ function _list_science_and_concept_map_certificates()
 					'Contributor Name',
 					'Download Certificates'
 				);
-				// @FIXME
-// theme() has been renamed to _theme() and should NEVER be called directly.
-// Calling _theme() directly can alter the expected output and potentially
-// introduce security issues (see https://www.drupal.org/node/2195739). You
-// should use renderable arrays instead.
-// 
-// 
-// @see https://www.drupal.org/node/2195739
-// $output        = theme('table', array(
-// 					'header' => $search_header,
-// 					'rows' => $search_rows
-// 				));
-
-				return $output;
+					return [
+					  '#type' => 'table',
+					  '#header' => $search_header,
+					  '#rows' => $search_rows,
+					];
 			} //$search_rows
 			else {
 				echo ("Error");

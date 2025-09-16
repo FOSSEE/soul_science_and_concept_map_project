@@ -10,6 +10,7 @@ namespace Drupal\science_and_concept_map\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Url;
 
 class ScienceAndConceptMapProposalEditForm extends FormBase {
 
@@ -23,7 +24,11 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
   public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $user = \Drupal::currentUser();
     /* get current proposal */
-    $proposal_id = (int) arg(3);
+    $proposal_id = (int) (
+      \Drupal::routeMatch()->getParameter('id')
+      ?? \Drupal::request()->attributes->get('id')
+      ?? 0
+    );
     $query = \Drupal::database()->select('soul_science_and_concept_map_textbook_details');
     $query ->fields('soul_science_and_concept_map_textbook_details');
     $query->condition('proposal_id', $proposal_id);
@@ -40,14 +45,14 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       } //$proposal_data = $proposal_q->fetchObject()
       else {
         \Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
-        drupal_goto('science-and-concept-map-project/manage-proposal');
-        return;
+        $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
+        return [];
       }
     } //$proposal_q
     else {
       \Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
-      drupal_goto('science-and-concept-map-project/manage-proposal');
-      return;
+      $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
+      return [];
     }
     $query = \Drupal::database()->select('soul_science_and_concept_map_software_version');
     $query->fields('soul_science_and_concept_map_software_version');
@@ -90,7 +95,7 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
     $form['student_email_id'] = [
       '#type' => 'item',
       '#title' => t('Email'),
-      '#markup' => $user_data->mail,
+      '#markup' => $user_data ? $user_data->getEmail() : '',
     ];
     /*$form['month_year_of_degree'] = array(
 		'#type' => 'date_popup',
@@ -432,9 +437,10 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       '#default_value' => $proposal_data->reference,
     ];
     $form['date_of_proposal'] = [
-      '#type' => 'date_popup',
+      '#type' => 'date',
       '#title' => t('Date of Proposal'),
-      '#default_value' => date("Y-m-d H:i:s"),
+      // Use stored creation timestamp; HTML5 date expects Y-m-d.
+      '#default_value' => !empty($proposal_data->creation_date) ? date('Y-m-d', $proposal_data->creation_date) : '',
       '#date_format' => 'd M Y',
       '#disabled' => TRUE,
       '#date_label_position' => '',
@@ -459,12 +465,11 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       '#type' => 'submit',
       '#value' => t('Submit'),
     ];
-    // @FIXME
-    // l() expects a Url object, created from a route name or external URI.
-    // $form['cancel'] = array(
-    // 		'#type' => 'item',
-    // 		'#markup' => l(t('Cancel'), 'science-and-concept-map-project/manage-proposal')
-    // 	);
+    // Cancel link (Drupal 8+).
+    $form['cancel'] = [
+      '#type' => 'item',
+      '#markup' => \Drupal\Core\Link::fromTextAndUrl(t('Cancel'), \Drupal\Core\Url::fromRoute('science_and_concept_map.proposal_all'))->toString(),
+    ];
 
     return $form;
   }
@@ -498,7 +503,11 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
   public function submitForm(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $user = \Drupal::currentUser();
     /* get current proposal */
-    $proposal_id = (int) arg(3);
+    $proposal_id = (int) (
+      \Drupal::routeMatch()->getParameter('id')
+      ?? \Drupal::request()->attributes->get('id')
+      ?? 0
+    );
     $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
     $query->fields('soul_science_and_concept_map_proposal');
     $query->condition('id', $proposal_id);
@@ -509,20 +518,20 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       } //$proposal_data = $proposal_q->fetchObject()
       else {
         \Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
-        drupal_goto('science-and-concept-map-project/manage-proposal');
+        $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
         return;
       }
     } //$proposal_q
     else {
       \Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
-      drupal_goto('science-and-concept-map-project/manage-proposal');
+      $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
       return;
     }
     /* delete proposal */
     if ($form_state->getValue(['delete_proposal']) == 1) {
       /* sending email */
       $user_data = \Drupal::entityTypeManager()->getStorage('user')->load($proposal_data->uid);
-      $email_to = $user_data->mail;
+      $email_to = $user_data ? $user_data->getEmail() : '';
       $from = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
       $bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
       $cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
@@ -549,7 +558,7 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
         $query->condition('id', $proposal_id);
         $num_deleted = $query->execute();
         \Drupal::messenger()->addStatus(t('Proposal Deleted'));
-        drupal_goto('science-and-concept-map-project/manage-proposal');
+        $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
         return;
       } //rrmdir_project($proposal_id) == TRUE
     } //$form_state['values']['delete_proposal'] == 1
