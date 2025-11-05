@@ -21,70 +21,59 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
  */
 class DefaultController extends ControllerBase {
 
-  public function science_and_concept_map_proposal_pending() {
-    //var_dump("hi");die;
-    /* get pending proposals to be approved */
-    $pending_rows = [];
-    $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
-    $query->fields('soul_science_and_concept_map_proposal');
-    $query->condition('approval_status', 0);
-    $query->orderBy('id', 'DESC');
-    $pending_q = $query->execute();
-    while ($pending_data = $pending_q->fetchObject()) {
-      $approval_url = Link::fromTextAndUrl('Approve', Url::fromRoute('science_and_concept_map.proposal_approval_form', ['id' => $pending_data->id]))->toString();
-      $edit_url = Link::fromTextAndUrl('Edit', Url::fromRoute('science_and_concept_map.proposal_edit_form', ['id' => $pending_data->id]))->toString();
-      $mainLink = Markup::create($approval_url . ' | ' . $edit_url);
+public function science_and_concept_map_proposal_pending() {
+  $pending_rows = [];
 
+  $pending_q = \Drupal::database()->select('soul_science_and_concept_map_proposal', 'p')
+    ->fields('p')
+    ->condition('approval_status', 0)
+    ->orderBy('id', 'DESC')
+    ->execute();
 
-$pending_rows[$pending_data->id] = [
-  
-  date('d-m-Y', $pending_data->creation_date),
-  
- // Create the link with the user's name as the link text.
-//  Link::fromTextAndUrl(
-//   $pending_data->name_title . ' ' . $pending_data->contributor_name,
-//   Url::fromRoute('entity.user.canonical', ['user' => $pending_data->uid])
-// )->toString(),
- Link::fromTextAndUrl($pending_data->contributor_name, Url::fromRoute('entity.user.canonical', ['user' => $pending_data->uid]))->toString(),
+  while ($pending_data = $pending_q->fetchObject()) {
 
+    $approval_url = Link::fromTextAndUrl(
+      $this->t('Approve'),
+      Url::fromRoute('science_and_concept_map.proposal_approval_form', ['id' => $pending_data->id])
+    )->toString();
 
-  // Link::fromTextAndUrl($pending_data->name, 'user/' . $pending_data->uid),
-  $pending_data->project_title,
-  // $pending_data->department,
-   $mainLink 
+    $edit_url = Link::fromTextAndUrl(
+      $this->t('Edit'),
+      Url::fromRoute('science_and_concept_map.proposal_edit_form', ['id' => $pending_data->id])
+    )->toString();
 
+    $actions = Markup::create($approval_url . ' | ' . $edit_url);
 
-  
-  // Link::fromTextAndUrl('Approve', Url::fromRoute('lab_migration.manage_proposal_approve', ['id' => $pending_data->id]))
-  // ->toString() . ' | ' . 
-  // Link::fromTextAndUrl('Edit', Url::fromRoute('lab_migration.proposal_edit_form', ['id' => $pending_data->id]))->toString()
-  // Link::fromTextAndUrl('Approve', 'lab_migration_manage_proposal_approve' . $pending_data->id) . ' | ' . Link::fromTextAndUrl('Edit', 'lab-migration/manage-proposal/edit/' . $pending_data->id),
-];
-    }    
-
-// var_dump($pending_rows);die;
-//$pending_data = $pending_q->fetchObject()
-	/* check if there are any pending proposals */
-    // if (!$pending_rows) {
-    //   \Drupal::messenger()->addStatus(t('There are no pending proposals.'));
-    //   return '';
-    // } //!$pending_rows
-    $pending_header = [
-      'Date of Submission',
-      'Student Name',
-      'Title of the science and concept map Project',
-      'Action',
+    $pending_rows[] = [
+      date('d-m-Y', (int) $pending_data->creation_date),
+      Link::fromTextAndUrl(
+        $pending_data->name_title . ' ' . $pending_data->contributor_name,
+        Url::fromRoute('entity.user.canonical', ['user' => $pending_data->uid])
+      )->toString(),
+      $pending_data->project_title,
+      $actions,
     ];
-    $output =  [
-      '#type' => 'table',
-      '#header' => $pending_header,
-      '#rows' => $pending_rows,
-      '#empty' => 'no rows found',
-    ];
-  
-
-    return $output;
   }
+if (empty($pending_rows)) {
+  \Drupal::messenger()->addStatus($this->t('There are no pending proposals.'));
+  return ['#markup' => '']; // return nothing else
+}
+
+  $pending_header = [
+    $this->t('Date of Submission'),
+    $this->t('Student Name'),
+    $this->t('Title of the Science and Concept Map Project'),
+    $this->t('Action'),
+  ];
+
+  return [
+    '#type' => 'table',
+    '#header' => $pending_header,
+    '#rows' => $pending_rows,
+    '#empty' => $this->t('There are no pending proposals.'),
+  ];
+}
+
 
   public function science_and_concept_map_proposal_all() {
     /* get pending proposals to be approved */
@@ -424,62 +413,65 @@ $pending_rows[$pending_data->id] = [
   }
 
   public function science_and_concept_map_completed_proposals_all() {
-    $output = "";
-    $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
-    $query->fields('soul_science_and_concept_map_proposal');
-    $query->condition('approval_status', 3);
-    $query->orderBy('actual_completion_date', 'DESC');
-    //$query->condition('is_completed', 1);
-    $result = $query->execute();
+  $output = "";
 
-    //var_dump($soul_project_abstract);die;
-    if ($result->rowCount() == 0) {
-      $output .= "We welcome your contributions." . "<hr>";
+  $query = \Drupal::database()->select('soul_science_and_concept_map_proposal', 'p');
+  $query->fields('p');
+  $query->condition('approval_status', 3);
+  $query->orderBy('actual_completion_date', 'DESC');
+  $result = $query->execute()->fetchAll();
 
-    } //$result->rowCount() == 0
-    else {
-      $output .= "Work has been completed for the following Science and Concept Map." . "<hr>";
-      $preference_rows = [];
-      $i = $result->rowCount();
-      while ($row = $result->fetchObject()) {
-        $proposal_id = $row->id;
-        $query1 = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file');
-        $query1->fields('soul_science_and_concept_map_submitted_abstracts_file');
-        $query1->condition('file_approval_status', 1);
-        $query1->condition('proposal_id', $proposal_id);
-        $soul_project_files = $query1->execute();
-        $soul_project_abstract = $soul_project_files->fetchObject();
-        $completion_date = date("Y", $row->actual_completion_date);
-        // Project link to Run page.
-        $run_link = Link::fromTextAndUrl($row->project_title, Url::fromRoute('science_and_concept_map.run_form', [], [
-          'query' => ['id' => $row->id],
-        ]))->toString();
-        $preference_rows[] = [
-          $i,
-          $run_link,
-          $row->contributor_name,
-          $row->university,
-          $completion_date,
-        ];
-
-        $i--;
-      } //$row = $result->fetchObject()
-      $preference_header = [
-        'No.',
-        'Science and Concept Map Project',
-        'Contributor Name',
-        'University / Institute',
-        'Year of Completion',
-      ];
-      $output = [
-        '#type' => 'table',
-        '#header' => $preference_header,
-        '#rows' => $preference_rows,
-      ];
-
-    }
-    return $output;
+  if (empty($result)) {
+    $output .= "We welcome your contributions.<hr>";
   }
+  else {
+    $output .= "Work has been completed for the following Science and Concept Map.<hr>";
+
+    $preference_rows = [];
+    $i = count($result);
+
+    foreach ($result as $row) {
+      $query1 = \Drupal::database()->select('soul_science_and_concept_map_submitted_abstracts_file', 'f');
+      $query1->fields('f');
+      $query1->condition('file_approval_status', 1);
+      $query1->condition('proposal_id', $row->id);
+      $file = $query1->execute()->fetchObject();
+
+      $completion_date = date("Y", $row->actual_completion_date);
+
+      // Link
+      $run_link = Link::fromTextAndUrl($row->project_title,
+        Url::fromRoute('science_and_concept_map.run_form', [], ['query' => ['id' => $row->id]])
+      )->toString();
+
+      $preference_rows[] = [
+        $i,
+        $run_link,
+        $row->contributor_name,
+        $row->university,
+        $completion_date,
+      ];
+      $i--;
+    }
+
+    $preference_header = [
+      'No.',
+      'Science and Concept Map Project',
+      'Contributor Name',
+      'University / Institute',
+      'Year of Completion',
+    ];
+
+    $output = [
+      '#type' => 'table',
+      '#header' => $preference_header,
+      '#rows' => $preference_rows,
+    ];
+  }
+
+  return $output;
+}
+
 
   public function science_and_concept_map_progress_all() {
     $page_content = "";

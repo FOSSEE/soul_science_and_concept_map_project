@@ -38,7 +38,7 @@ class GeneratePdf extends FormBase {
       ':proposal_id' => $proposal_id
       ]);
     $data3 = $query3->fetchObject();
-    $pdf = new FPDF('L', 'mm', 'Letter');
+    $pdf = new \FPDF('L', 'mm', 'Letter');
     if (!$pdf) {
       echo "Error!";
     } //!$pdf
@@ -123,7 +123,7 @@ class GeneratePdf extends FormBase {
     $fileName = 'generated_qrcode.png';
     $pngAbsoluteFilePath = $tempDir . $fileName;
     $urlRelativeFilePath = $path . "/pdf/temp_prcode/" . $fileName;
-    QRcode::png($codeContents, $pngAbsoluteFilePath);
+    \QRcode::png($codeContents, $pngAbsoluteFilePath);
     $pdf->SetFont('Times', 'B', 12);
     $pdf->SetY(15);
     $pdf->Ln(13);

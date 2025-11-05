@@ -558,7 +558,7 @@ class ScienceAndConceptMapProposalForm extends FormBase {
     $form['date_of_proposal'] = [
       '#type' => 'date',
       '#title' => t('Date of Proposal'),
-      '#default_value' => date("Y-m-d H:i:s"),
+      '#default_value' => date("Y-m-d"),
       '#date_format' => 'd M Y',
       '#disabled' => TRUE,
       '#date_label_position' => '',

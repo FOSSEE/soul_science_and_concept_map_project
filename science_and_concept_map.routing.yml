@@ -120,6 +120,13 @@ science_and_concept_map.download_full_project:
   requirements:
     _permission: 'soul science and concept map download code'
 science_and_concept_map.completed_proposals_all:
+  path: /science-and-concept-map-project/completed-projects
+  defaults:
+    _title: 'Completed Science and Concept Maps'
+    _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::science_and_concept_map_completed_proposals_all'
+  requirements:
+    _permission: 'soul science and concept map download code'
+science_and_concept_map.completed_proposals_all_simulations:
   path: /science-and-concept-map-project/completed-projects/simulations
   defaults:
     _title: 'Completed Science and Concept Maps'

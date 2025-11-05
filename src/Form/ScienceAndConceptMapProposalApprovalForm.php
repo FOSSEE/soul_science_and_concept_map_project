@@ -390,7 +390,7 @@ public function submitForm(array &$form, \Drupal\Core\Form\FormStateInterface $f
     }
 
     \Drupal::messenger()->addStatus('soul science-and-concept-map proposal No. ' . $proposal_id . ' approved. User has been notified of the approval.');
-    $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
+    $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal/pending'));
     return;
   }
   else {
