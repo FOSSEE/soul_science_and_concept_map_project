@@ -36,44 +36,91 @@ class ScienceAndConceptMapProposalForm extends FormBase {
   }
 
   public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state, $no_js_use = NULL) {
-    $user = \Drupal::currentUser();
+   
+ 
+
+$user = \Drupal::currentUser();
+
+/************************ start approve book details ************************/
+if ($user->isAnonymous()) {
+
+  \Drupal::messenger()->addError(t(
+    'It is mandatory to @login_link on this website to access the flowsheet proposal form. If you are a new user, please create a new account first.',
+    [
+      '@login_link' => Link::fromTextAndUrl(
+        t('login'),
+        Url::fromRoute('user.login')
+      )->toString(),
+    ]
+  ));
+
+  $response = new RedirectResponse(
+    Url::fromRoute('user.login', [], [
+      'query' => \Drupal::destination()->getAsArray(),
+    ])->toString()
+  );
+
+  return $response;
+}
+
+$query = \Drupal::database()->select('soul_science_and_concept_map_proposal', 's');
+$query->fields('s');
+$query->condition('uid', $user->id());  
+$query->orderBy('id', 'DESC');
+$query->range(0, 1);
+
+$proposal_data = $query->execute()->fetchObject();
+
+if ($proposal_data) {
+  if ($proposal_data->approval_status == 0 || $proposal_data->approval_status == 1) {
+
+    \Drupal::messenger()->addStatus(t('We have already received your proposal.'));
+
+    $response = new RedirectResponse(
+      Url::fromRoute('<front>')->toString()
+    );
+
+    return $response;
+  }
+}
+
     /************************ start approve book details ************************/
-    if ($user->id() == 0) {
-      $msg = \Drupal::messenger()->addError(t('It is mandatory to @login_link on this website to access the flowsheet proposal form. If you are a new user, please create a new account first.', [
-        '@login_link' => Link::fromTextAndUrl(t('login'), Url::fromRoute('user.page'))->toString(),
-      ]));
-      // $msg = \Drupal::messenger()->addError(t('It is mandatory to ' . \Drupal\Core\Link::fromTextAndUrl('login', \Drupal\Core\Url::fromRoute('user.page')) . ' on this website to access the flowsheet proposal form. If you are new user please create a new account first.'));
-      //drupal_goto('dwsim-flowsheet-project');
-      $response = new RedirectResponse(Url::fromRoute('user.login', [], [
-        'query' => \Drupal::destination()->getAsArray(),
-      ])->toString());
+//     if ($user->id() == 0) {
+//       $msg = \Drupal::messenger()->addError(t('It is mandatory to @login_link on this website to access the flowsheet proposal form. If you are a new user, please create a new account first.', [
+//         '@login_link' => Link::fromTextAndUrl(t('login'), Url::fromRoute('user.page'))->toString(),
+//       ]));
+//       // $msg = \Drupal::messenger()->addError(t('It is mandatory to ' . \Drupal\Core\Link::fromTextAndUrl('login', \Drupal\Core\Url::fromRoute('user.page')) . ' on this website to access the flowsheet proposal form. If you are new user please create a new account first.'));
+//       //drupal_goto('dwsim-flowsheet-project');
+//       $response = new RedirectResponse(Url::fromRoute('user.login', [], [
+//         'query' => \Drupal::destination()->getAsArray(),
+//       ])->toString());
       
-      return $response;
-      // drupal_goto('user/login', [
-      //   'query' => drupal_get_destination()
-      //   ]);
-      return $msg;
-    } //$user->uid == 0
-    $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
-    $query->fields('soul_science_and_concept_map_proposal');
-    $query->condition('uid', $user->uid);
-    $query->orderBy('id', 'DESC');
-    $query->range(0, 1);
-    $proposal_q = $query->execute();
-    $proposal_data = $proposal_q->fetchObject();
-    if ($proposal_data) {
-      if ($proposal_data->approval_status == 0 || $proposal_data->approval_status == 1) {
-       \Drupal::messenger()->addStatus(t('We have already received your proposal.'));
-        $response = new RedirectResponse(Url::fromRoute('<front>')->toString());
+//       return $response;
+//       // drupal_goto('user/login', [
+//       //   'query' => drupal_get_destination()
+//       //   ]);
+//       return $msg;
+//     } //$user->uid == 0
+//     $query = \Drupal::database()->select('soul_science_and_concept_map_proposal');
+//     $query->fields('soul_science_and_concept_map_proposal');
+//     $query->condition('uid', $user->uid);
+//     $query->orderBy('id', 'DESC');
+//     $query->range(0, 1);
+//     $proposal_q = $query->execute();
+//     $proposal_data = $proposal_q->fetchObject();
+//     if ($proposal_data) {
+//       if ($proposal_data->approval_status == 0 || $proposal_data->approval_status == 1) {
+//       $msg = \Drupal::messenger()->addStatus(t('We have already received your proposal.'));
+//         $response = new RedirectResponse(Url::fromRoute('<front>')->toString());
   
-  // Send the redirect response
-//  $response->send();
-        // drupal_goto('');
+//   // Send the redirect response
+// //  $response->send();
+//         // drupal_goto('');
       
-        return $response;
-       
-      } //$proposal_data->approval_status == 0 || $proposal_data->approval_status == 1
-    } //$proposal_data
+//         return $response;
+//         return $msg;
+//       } //$proposal_data->approval_status == 0 || $proposal_data->approval_status == 1
+//     } //$proposal_data
     $form['#attributes'] = [
       'enctype' => "multipart/form-data"
       ];

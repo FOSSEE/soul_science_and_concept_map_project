@@ -45,14 +45,14 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       } //$proposal_data = $proposal_q->fetchObject()
       else {
         \Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
-        $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
-        return [];
+         $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
+        return ;
       }
     } //$proposal_q
     else {
       \Drupal::messenger()->addError(t('Invalid proposal selected. Please try again.'));
       $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
-      return [];
+      return ;
     }
     $query = \Drupal::database()->select('soul_science_and_concept_map_software_version');
     $query->fields('soul_science_and_concept_map_software_version');
@@ -92,11 +92,23 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       '#required' => TRUE,
       '#default_value' => $proposal_data->contributor_name,
     ];
-    $form['student_email_id'] = [
-      '#type' => 'item',
-      '#title' => t('Email'),
-      '#markup' => $user_data ? $user_data->getEmail() : '',
-    ];
+    $student_email = '';
+if (!empty($proposal_data->uid)) {
+  $user_entity = \Drupal::entityTypeManager()
+    ->getStorage('user')
+    ->load($proposal_data->uid);
+
+  if ($user_entity) {
+    $student_email = $user_entity->getEmail();
+  }
+}
+
+$form['student_email_id'] = [
+  '#type' => 'item',
+  '#title' => $this->t('Email'),
+  '#markup' => $student_email,
+];
+
     /*$form['month_year_of_degree'] = array(
 		'#type' => 'date_popup',
 		'#title' => t('Month and year of award of degree'),
@@ -350,52 +362,72 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       '#title' => t('Title of the book'),
       '#size' => 30,
       '#maxlength' => 100,
-      '#required' => TRUE,
+      '#states' => [
+        'required' => [
+          ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+        ],
+      ],
       '#validated' => TRUE,
-      '#default_value' => $book_data->book,
+      '#default_value' => $book_data->book ?? '',
     ];
     $form['preference1']['author1'] = [
       '#type' => 'textfield',
       '#title' => t('Author Name'),
       '#size' => 30,
       '#maxlength' => 100,
-      '#default_value' => $book_data->author,
+      '#default_value' => $book_data->author ?? '',
     ];
     $form['preference1']['isbn1'] = [
       '#type' => 'textfield',
       '#title' => t('ISBN No'),
       '#size' => 30,
       '#maxlength' => 25,
-      '#required' => TRUE,
+      '#states' => [
+        'required' => [
+          ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+        ],
+      ],
       '#validated' => TRUE,
-      '#default_value' => $book_data->isbn,
+      '#default_value' => $book_data->isbn ?? '',
     ];
     $form['preference1']['publisher1'] = [
       '#type' => 'textfield',
       '#title' => t('Publisher & Place'),
       '#size' => 30,
       '#maxlength' => 50,
-      '#required' => TRUE,
+      '#states' => [
+        'required' => [
+          ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+        ],
+      ],
       '#validated' => TRUE,
-      '#default_value' => $book_data->publisher,
+      '#default_value' => $book_data->publisher ?? '',
     ];
     $form['preference1']['edition1'] = [
       '#type' => 'textfield',
       '#title' => t('Edition'),
       '#size' => 4,
       '#maxlength' => 2,
-      '#required' => TRUE,
+      '#states' => [
+        'required' => [
+          ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+        ],
+      ],
       '#validated' => TRUE,
-      '#default_value' => $book_data->edition,
+      '#default_value' => $book_data->edition ?? '',
     ];
     $form['preference1']['book_year'] = [
       '#type' => 'textfield',
       '#title' => t('Year of publication'),
       '#size' => 4,
       '#maxlength' => 4,
-      '#required' => TRUE,
+      '#states' => [
+        'required' => [
+          ':input[name="is_ncert_book"]' => ['value' => 'Yes'],
+        ],
+      ],
       '#validated' => TRUE,
-      '#default_value' => $book_data->book_year,
+      '#default_value' => $book_data->book_year ?? '',
     ];
 
     $form['year_of_study'] = [
@@ -465,7 +497,7 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
       '#type' => 'submit',
       '#value' => t('Submit'),
     ];
-    // Cancel link (Drupal 8+).
+   
     $form['cancel'] = [
       '#type' => 'item',
       '#markup' => \Drupal\Core\Link::fromTextAndUrl(t('Cancel'), \Drupal\Core\Url::fromRoute('science_and_concept_map.proposal_all'))->toString(),
@@ -501,7 +533,6 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
   }
 
   public function submitForm(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
-    $user = \Drupal::currentUser();
     /* get current proposal */
     $proposal_id = (int) (
       \Drupal::routeMatch()->getParameter('id')
@@ -546,7 +577,10 @@ class ScienceAndConceptMapProposalEditForm extends FormBase {
         'Cc' => $cc,
         'Bcc' => $bcc,
       ];
-      if (!drupal_mail('science_and_concept_map', 'science_and_concept_map_proposal_deleted', $email_to, user_preferred_language($user), $params, $from, TRUE)) {
+      $langcode = $user_data ? $user_data->getPreferredLangcode() : \Drupal::languageManager()->getDefaultLanguage()->getId();
+      $mail_manager = \Drupal::service('plugin.manager.mail');
+      $result = $mail_manager->mail('science_and_concept_map', 'science_and_concept_map_proposal_deleted', $email_to, $langcode, $params, $from, TRUE);
+      if (empty($result) || (isset($result['result']) && !$result['result'])) {
         \Drupal::messenger()->addError('Error sending email message.');
       }
       \Drupal::messenger()->addStatus(t('soul science-and-concept-map-project proposal has been deleted.'));

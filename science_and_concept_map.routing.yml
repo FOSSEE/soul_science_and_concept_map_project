@@ -76,9 +76,10 @@ science_and_concept_map.upload_abstract_code_form:
   requirements:
     _permission: 'soul science and concept map upload code'
 science_and_concept_map.upload_code_delete:
-  path: /science-and-concept-map-project/abstract-code/delete
+  path: /science-and-concept-map-project/abstract-code/delete/{solution_id}
   defaults:
     _title: 'Delete Solution'
+    _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::upload_code_delete'
   requirements:
     _permission: 'soul science and concept map delete code'
 science_and_concept_map.download_solution_file:
@@ -168,6 +169,13 @@ science_and_concept_map.settings_form:
     _form: \Drupal\science_and_concept_map\Form\ScienceAndConceptMapSettingsForm
   requirements:
     _permission: 'administer soul science and concept map'
+science_and_concept_map.certificates:
+  path: /science-and-concept-map-project/certificates
+  defaults:
+    _title: 'List of science and concept map Certificates'
+    _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::list_student_certificates'
+  requirements:
+    _role: 'authenticated'
 science_and_concept_map._list_science_and_concept_map_certificates:
   path: /science-and-concept-map-project/mentor-certificates
   defaults:
@@ -175,6 +183,13 @@ science_and_concept_map._list_science_and_concept_map_certificates:
     _controller: '\Drupal\science_and_concept_map\Controller\DefaultController::_list_science_and_concept_map_certificates'
   requirements:
     _permission: 'list science and concept map mentor certificates'
+science_and_concept_map.certificates_generate_pdf:
+  path: /science-and-concept-map-project/certificates/generate-pdf
+  defaults:
+    _title: 'Download Certificate'
+    _form: \Drupal\science_and_concept_map\Form\GenerateStudentCertificate
+  requirements:
+    _permission: 'generate certificate'
 science_and_concept_map.generate_pdf:
   path: /science-and-concept-map-project/certificates-custom/pdf
   defaults:

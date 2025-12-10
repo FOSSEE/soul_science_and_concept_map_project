@@ -446,5 +446,98 @@ function rrmdir($dir)
 		reset($objects);
 		rmdir($dir);
 	} //is_dir($dir)
+	}
 }
+
+/**
+ * Delete a solution record along with its files and dependencies.
+ */
+function soul_science_and_concept_map_delete_solution($solution_id) {
+	$solution_id = (int) $solution_id;
+	if (!$solution_id) {
+		return FALSE;
+	}
+
+	$connection = \Drupal::database();
+	$file_system = \Drupal::service('file_system');
+	$root_path = science_and_concept_map_path();
+
+	// Remove associated files from disk, if present.
+	$files_q = $connection->select('soul_science_and_concept_map_solution_files', 'f')
+		->fields('f')
+		->condition('solution_id', $solution_id)
+		->execute();
+	foreach ($files_q as $file) {
+		foreach (['filepath', 'pdfpath'] as $field) {
+			if (!empty($file->$field)) {
+				$candidates = [$file->$field, $root_path . $file->$field];
+				foreach ($candidates as $candidate) {
+					if (@file_exists($candidate)) {
+						try {
+							$file_system->delete($candidate);
+						}
+						catch (\Exception $e) {
+							// Continue; still attempt DB cleanup.
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	$connection->delete('soul_science_and_concept_map_solution_dependency')
+		->condition('solution_id', $solution_id)
+		->execute();
+	$connection->delete('soul_science_and_concept_map_solution_files')
+		->condition('solution_id', $solution_id)
+		->execute();
+	$connection->delete('soul_science_and_concept_map_solution')
+		->condition('id', $solution_id)
+		->execute();
+
+	return TRUE;
 }
+
+/**
+ * Delete an entire project (proposal + uploaded abstracts/files).
+ */
+function science_and_concept_map_abstract_delete_project($proposal_id) {
+	$proposal_id = (int) $proposal_id;
+	if (!$proposal_id) {
+		return FALSE;
+	}
+
+	$connection = \Drupal::database();
+	$proposal = $connection->select('soul_science_and_concept_map_proposal', 'p')
+		->fields('p')
+		->condition('id', $proposal_id)
+		->range(0, 1)
+		->execute()
+		->fetchObject();
+	if (!$proposal) {
+		return FALSE;
+	}
+
+	// Remove project directory.
+	rrmdir_project($proposal_id);
+
+	// Delete submitted files and abstracts.
+	$connection->delete('soul_science_and_concept_map_submitted_abstracts_file')
+		->condition('proposal_id', $proposal_id)
+		->execute();
+	$connection->delete('soul_science_and_concept_map_submitted_abstracts')
+		->condition('proposal_id', $proposal_id)
+		->execute();
+
+	// Delete the proposal itself.
+	$connection->delete('soul_science_and_concept_map_proposal')
+		->condition('id', $proposal_id)
+		->execute();
+
+	return TRUE;
+}
+
+/**
+ * Verify QR code and return HTML snippet.
+ */

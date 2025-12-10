@@ -230,10 +230,15 @@ science_and_concept_map.settings_form:
   title: 'Science and Concept Map Settings'
   description: 'soul science and concept map Settings'
 
-science_and_concept_map._list_science_and_concept_map_certificates:
-  route_name: science_and_concept_map._list_science_and_concept_map_certificates
+science_and_concept_map.certificates:
+  route_name: science_and_concept_map.certificates
   title: 'List of science and concept map Certificates'
   description: 'List of science and concept map Certificates'
+
+science_and_concept_map.mentor_certificates:
+  route_name: science_and_concept_map._list_science_and_concept_map_certificates
+  title: 'List of Science and Concept Map  Mentor Certificates'
+  description: 'List of Science and Concept Map  Mentor Certificates'
 
 science_and_concept_map.generate_pdf:
   route_name: science_and_concept_map.generate_pdf

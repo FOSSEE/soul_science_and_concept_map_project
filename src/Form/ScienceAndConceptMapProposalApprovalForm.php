@@ -390,7 +390,8 @@ public function submitForm(array &$form, \Drupal\Core\Form\FormStateInterface $f
     }
 
     \Drupal::messenger()->addStatus('soul science-and-concept-map proposal No. ' . $proposal_id . ' approved. User has been notified of the approval.');
-    $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal/pending'));
+    // Redirect to pending proposals after approval.
+    $form_state->setRedirect('science_and_concept_map.proposal_pending');
     return;
   }
   else {
@@ -432,7 +433,8 @@ public function submitForm(array &$form, \Drupal\Core\Form\FormStateInterface $f
       }
 
       \Drupal::messenger()->addError('soul science and concept map proposal No. ' . $proposal_id . ' dis-approved. User has been notified of the dis-approval.');
-      $form_state->setRedirectUrl(Url::fromUserInput('/science-and-concept-map-project/manage-proposal'));
+      // Redirect to pending proposals after disapproval.
+      $form_state->setRedirect('science_and_concept_map.proposal_pending');
       return;
     }
   }

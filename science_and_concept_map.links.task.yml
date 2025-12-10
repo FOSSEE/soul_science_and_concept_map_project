@@ -10,11 +10,11 @@ science_and_concept_map.proposal_all:
   weight: 4
   base_route: science_and_concept_map.proposal_pending
 
-science_and_concept_map.abstract_approval_form:
-  route_name: science_and_concept_map.abstract_approval_form
-  title: 'Code Approval'
-  weight: 1
-  base_route: science_and_concept_map.abstract_approval
+# science_and_concept_map.abstract_approval_form:
+#   route_name: science_and_concept_map.abstract_approval_form
+#   title: 'Code Approval'
+#   weight: 1
+#   base_route: science_and_concept_map.abstract_approval
 
 science_and_concept_map.abstract_bulk_approval_form:
   route_name: science_and_concept_map.abstract_bulk_approval_form
@@ -26,6 +26,12 @@ science_and_concept_map.abstract_0:
   route_name: science_and_concept_map.abstract
   title: 'Science and Concept Map'
   weight: 1
+  base_route: science_and_concept_map.abstract
+
+science_and_concept_map.abstract_upload:
+  route_name: science_and_concept_map.upload_abstract_code_form
+  title: 'Upload Abstract/Code'
+  weight: 2
   base_route: science_and_concept_map.abstract
 
 science_and_concept_map.completed_proposals_all_0:

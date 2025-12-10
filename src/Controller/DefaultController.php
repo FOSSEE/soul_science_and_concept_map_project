@@ -252,7 +252,7 @@ if (empty($pending_rows)) {
     $return_html = "";
     $proposal_data = science_and_concept_map_get_proposal();
     if (!$proposal_data) {
-      // return $this->redirect('<front>');
+      return $this->redirect('<front>');
     } //!$proposal_data
     //$return_html .= l('Upload abstract', 'science-and-concept-map-project/abstract-code/upload') . '<br />';
 	/* get experiment list */
@@ -557,6 +557,50 @@ if (empty($pending_rows)) {
     return $response;
   }
 
+  public function list_student_certificates() {
+    $current_user = $this->currentUser();
+    $query = \Drupal::database()->select('soul_science_and_concept_map_proposal', 'p');
+    $query->fields('p', ['id', 'project_title', 'contributor_name']);
+    $query->condition('approval_status', 3);
+    $query->condition('uid', $current_user->id());
+    $query->orderBy('project_title', 'ASC');
+    $rows = [];
+    foreach ($query->execute()->fetchAll() as $record) {
+      $rows[] = [
+        $record->project_title,
+        $record->contributor_name,
+        Link::fromTextAndUrl(
+          $this->t('Download Certificate'),
+          Url::fromRoute('science_and_concept_map.certificates_generate_pdf', [], [
+            'query' => ['proposal_id' => $record->id],
+          ])
+        )->toString(),
+      ];
+    }
+
+    if (empty($rows)) {
+      $proposal_url = Url::fromRoute('science_and_concept_map.proposal_form')->toString();
+      $message = Markup::create($this->t('<strong>You need to propose a science and concept map project <a href=":proposal">Proposal</a></strong> or if you have already proposed then your project is under reviewing process', [
+        ':proposal' => $proposal_url,
+      ]));
+      \Drupal::messenger()->addStatus($message);
+      return [
+        '#type' => 'markup',
+        '#markup' => Markup::create('<span style="color:red;">' . $this->t('No certificate available') . '</span>'),
+      ];
+    }
+
+    return [
+      '#type' => 'table',
+      '#header' => [
+        $this->t('Project Title'),
+        $this->t('Contributor Name'),
+        $this->t('Download Certificates'),
+      ],
+      '#rows' => $rows,
+    ];
+  }
+
   public function _list_science_and_concept_map_certificates() {
     $user = \Drupal::currentUser();
     $query_id = \Drupal::database()->query("SELECT id FROM soul_science_and_concept_map_proposal WHERE approval_status=3");
@@ -621,7 +665,95 @@ soul_science_and_concept_map_proposal WHERE project_guide_name != '' AND project
       ];
     }
     // Build the form via FormBuilder; returns a render array.
-    return \Drupal::formBuilder()->getForm('verify_certificates_form');
+    return \Drupal::formBuilder()->getForm('Drupal\science_and_concept_map\Form\VerifyCertificatesForm');
+  }
+
+  /**
+   * Delete a pending solution uploaded by a solution provider.
+   */
+  public function upload_code_delete($solution_id) {
+    $current_user = \Drupal::currentUser();
+    $solution_id = (int) $solution_id;
+    $redirect = new RedirectResponse(Url::fromRoute('science_and_concept_map.abstract')->toString());
+
+    if (!$solution_id) {
+      $this->messenger()->addError($this->t('Invalid solution.'));
+      return $redirect;
+    }
+
+    $connection = \Drupal::database();
+
+    $solution = $connection->select('soul_science_and_concept_map_solution', 's')
+      ->fields('s')
+      ->condition('id', $solution_id)
+      ->range(0, 1)
+      ->execute()
+      ->fetchObject();
+    if (!$solution) {
+      $this->messenger()->addError($this->t('Invalid solution.'));
+      return $redirect;
+    }
+    if ((int) $solution->approval_status !== 0) {
+      $this->messenger()->addError($this->t('You cannot delete a solution after it has been approved.'));
+      return $redirect;
+    }
+
+    $experiment = $connection->select('soul_science_and_concept_map_experiment', 'e')
+      ->fields('e')
+      ->condition('id', $solution->experiment_id)
+      ->range(0, 1)
+      ->execute()
+      ->fetchObject();
+    if (!$experiment) {
+      $this->messenger()->addError($this->t('You do not have permission to delete this solution.'));
+      return $redirect;
+    }
+
+    $proposal = $connection->select('soul_science_and_concept_map_proposal', 'p')
+      ->fields('p')
+      ->condition('id', $experiment->proposal_id)
+      ->condition('solution_provider_uid', $current_user->id())
+      ->range(0, 1)
+      ->execute()
+      ->fetchObject();
+    if (!$proposal) {
+      $this->messenger()->addError($this->t('You do not have permission to delete this solution.'));
+      return $redirect;
+    }
+
+    if (soul_science_and_concept_map_delete_solution($solution_id)) {
+      $this->messenger()->addStatus($this->t('Solution deleted.'));
+      $email_to = $current_user->getEmail();
+      if ($email_to) {
+        $config = \Drupal::config('science_and_concept_map.settings');
+        $from = $config->get('science_and_concept_map_from_email');
+        $bcc = $config->get('science_and_concept_map_emails');
+        $cc = $config->get('science_and_concept_map_cc_emails');
+        $params['solution_deleted_user'] = [
+          'lab_title' => $proposal->lab_title ?? '',
+          'experiment_title' => $experiment->title ?? '',
+          'solution_number' => $solution->code_number ?? '',
+          'solution_caption' => $solution->caption ?? '',
+          'user_id' => $current_user->id(),
+          'headers' => [
+            'From' => $from,
+            'MIME-Version' => '1.0',
+            'Content-Type' => 'text/plain; charset=UTF-8; format=flowed; delsp=yes',
+            'Content-Transfer-Encoding' => '8Bit',
+            'X-Mailer' => 'Drupal',
+            'Cc' => $cc,
+            'Bcc' => $bcc,
+          ],
+        ];
+        $langcode = \Drupal::languageManager()->getDefaultLanguage()->getId();
+        \Drupal::service('plugin.manager.mail')->mail('science_and_concept_map', 'solution_deleted_user', $email_to, $langcode, $params, $from, TRUE);
+      }
+    }
+    else {
+      $this->messenger()->addError($this->t('Error deleting solution.'));
+    }
+
+    return $redirect;
   }
 
 }
