@@ -1,8 +1,8 @@
 <?php
 function _list_science_and_concept_map_certificates()
 {
-	global $user;
-	$query_id = db_query("SELECT id FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND uid= :uid", array(
+	$user = \Drupal::currentUser();
+	$query_id = \Drupal::database()->query("SELECT id FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND uid= :uid", array(
 		':uid' => $user->uid
 	));
 	$exist_id = $query_id->fetchObject();
@@ -11,16 +11,23 @@ function _list_science_and_concept_map_certificates()
 			$search_rows = array();
 			global $output;
 			$output = '';
-			$query3 = db_query("SELECT id,project_title,contributor_name FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND uid= :uid", array(
+			$query3 = \Drupal::database()->query("SELECT id,project_title,contributor_name FROM soul_science_and_concept_map_proposal WHERE approval_status=3 AND uid= :uid", array(
 				':uid' => $user->uid
 			));
 			while ($search_data3 = $query3->fetchObject()) {
 				if ($search_data3->id) {
+					$download_link = \Drupal\Core\Link::fromTextAndUrl(
+					  'Download Certificate',
+					  \Drupal\Core\Url::fromRoute('science_and_concept_map.generate_pdf', [], [
+					    'query' => ['proposal_id' => $search_data3->id],
+					  ])
+					)->toString();
 					$search_rows[] = array(
 						$search_data3->project_title,
 						$search_data3->contributor_name,
-						l('Download Certificate', 'science-and-concept-map-project/certificates/generate-pdf/' . $search_data3->id)
+						$download_link
 					);
+
 				} //$search_data3->id
 			} //$search_data3 = $query3->fetchObject()
 			if ($search_rows) {
@@ -29,11 +36,11 @@ function _list_science_and_concept_map_certificates()
 					'Contributor Name',
 					'Download Certificates'
 				);
-				$output        = theme('table', array(
-					'header' => $search_header,
-					'rows' => $search_rows
-				));
-				return $output;
+					return [
+					  '#type' => 'table',
+					  '#header' => $search_header,
+					  '#rows' => $search_rows,
+					];
 			} //$search_rows
 			else {
 				echo ("Error");
@@ -42,7 +49,7 @@ function _list_science_and_concept_map_certificates()
 		}
 	} //$exist_id->id
 	else {
-		drupal_set_message('<strong>You need to propose a science and concept map project <a href="https://soul.fossee.in/science-and-concept-map-project/proposal">Proposal</a></strong> or if you have already proposed then your Project is under reviewing process', 'status');
+		\Drupal::messenger()->addStatus('<strong>You need to propose a science and concept map project <a href="https://soul.fossee.in/science-and-concept-map-project/proposal">Proposal</a></strong> or if you have already proposed then your Project is under reviewing process');
 		$page_content = "<span style='color:red;'> No certificate available </span>";
 		return $page_content;
 	}
