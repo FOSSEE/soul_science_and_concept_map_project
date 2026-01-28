@@ -1043,27 +1043,25 @@ $proposal_id = \Drupal::database()
       return;
     } //!$proposal_id
 	/* sending email */
-    // $email_to = $user->getEmail();
-    // $language = $user->getPreferredLangcode();
-
-    // // var_dump($email_to);die;
-    // $form = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
-    // $bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
-    // $cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
-    // $params['science_and_concept_map_proposal_received']['proposal_id'] = $proposal_id;
-    // $params['science_and_concept_map_proposal_received']['user_id'] = $user->id();
-    // $params['science_and_concept_map_proposal_received']['headers'] = [
-    //   'From' => $form,
-    //   'MIME-Version' => '1.0',
-    //   'Content-Type' => 'text/plain; charset=UTF-8; format=flowed; delsp=yes',
-    //   'Content-Transfer-Encoding' => '8Bit',
-    //   'X-Mailer' => 'Drupal',
-    //   'Cc' => $cc,
-    //   'Bcc' => $bcc,
-    // ];
-    // if (!\Drupal::service('plugin.manager.mail')->mail('science_and_concept_map', 'science_and_concept_map_proposal_received', $email_to, $user->user_preferred_language(), $params, $form, TRUE)) {
-    //   \Drupal::messenger()->addError('Error sending email message.');
-    // }
+    $email_to = $user->getEmail();
+    $from = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_from_email');
+    $bcc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_emails');
+    $cc = \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_cc_emails');
+    $params['science_and_concept_map_proposal_received']['proposal_id'] = $proposal_id;
+    $params['science_and_concept_map_proposal_received']['user_id'] = $user->id();
+    $params['science_and_concept_map_proposal_received']['headers'] = [
+      'From' => $from,
+      'MIME-Version' => '1.0',
+      'Content-Type' => 'text/plain; charset=UTF-8; format=flowed; delsp=yes',
+      'Content-Transfer-Encoding' => '8Bit',
+      'X-Mailer' => 'Drupal',
+      'Cc' => $cc,
+      'Bcc' => $bcc,
+    ];
+    $langcode = $user->getPreferredLangcode();
+    if (!\Drupal::service('plugin.manager.mail')->mail('science_and_concept_map', 'science_and_concept_map_proposal_received', $email_to, $langcode, $params, $from, TRUE)) {
+      \Drupal::messenger()->addError('Error sending email message.');
+    }
       //  var_dump(_scmp_dir_name);die;
     $response = new RedirectResponse(Url::fromRoute('<front>')->toString());
     // Send the redirect response

@@ -1007,17 +1007,356 @@ function rrmdir($dir)
  * Implements hook_mail().
  */
 function science_and_concept_map_mail($key, &$message, $params) {
-	if (!empty($params['standard'])) {
-		$standard = $params['standard'];
-		if (!empty($standard['headers']) && is_array($standard['headers'])) {
-			$message['headers'] = $standard['headers'] + $message['headers'];
+	$langcode = $message['langcode'] ?? \Drupal::languageManager()->getDefaultLanguage()->getId();
+	$options = ['langcode' => $langcode];
+	$site_name = \Drupal::config('system.site')->get('name');
+
+	$set_headers = function (array $headers = []) use (&$message) {
+		if (!empty($headers)) {
+			$message['headers'] = $headers + $message['headers'];
 		}
-		if (!empty($standard['subject'])) {
-			$message['subject'] = $standard['subject'];
+	};
+
+	$not_entered = function ($value) {
+		return ($value === NULL || $value === '' || $value === 'NULL') ? 'Not Entered' : $value;
+	};
+
+	$load_proposal = function ($proposal_id) {
+		if (!$proposal_id) {
+			return NULL;
 		}
-		if (!empty($standard['body'])) {
-			$message['body'] = is_array($standard['body']) ? $standard['body'] : array($standard['body']);
+		return \Drupal::database()->select('soul_science_and_concept_map_proposal', 'p')
+			->fields('p')
+			->condition('id', $proposal_id)
+			->range(0, 1)
+			->execute()
+			->fetchObject();
+	};
+
+	$load_solution = function ($solution_id) {
+		if (!$solution_id) {
+			return NULL;
 		}
+		return \Drupal::database()->select('soul_science_and_concept_map_solution', 's')
+			->fields('s')
+			->condition('id', $solution_id)
+			->range(0, 1)
+			->execute()
+			->fetchObject();
+	};
+
+	switch ($key) {
+		case 'science_and_concept_map_proposal_received':
+			$proposal_id = $params['science_and_concept_map_proposal_received']['proposal_id']
+				?? $params['science_and_concept_map_proposal_received']['result1']
+				?? NULL;
+			$proposal = $load_proposal($proposal_id) ?: (object) [];
+			$user = !empty($params['science_and_concept_map_proposal_received']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['science_and_concept_map_proposal_received']['user_id'])
+				: NULL;
+			$project_guide_name = $not_entered($proposal->project_guide_name ?? '');
+			$project_guide_email_id = $not_entered($proposal->project_guide_email_id ?? '');
+			$set_headers($params['science_and_concept_map_proposal_received']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your soul science and concept map project proposal has been received', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nThank you for submitting the proposal for the SOUL science and concept map Project. The details of your proposal are as below.\n\nFull Name: @full_name\nEmail: @email\nUniversity/Institute: @university\nCity: @city\nState: @state\nCountry: @country\nTitle of Category: @category\nProject Guide: @project_guide\nProject Guide Email: @project_guide_email\nProject Title: @project_title\n\nYour proposal is under review. You will soon receive an email when the same has been approved/disapproved.\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@email' => $user ? $user->getEmail() : '',
+				'@university' => $proposal->university ?? '',
+				'@city' => $proposal->city ?? '',
+				'@state' => $proposal->state ?? '',
+				'@country' => $proposal->country ?? '',
+				'@category' => $proposal->category ?? '',
+				'@project_guide' => $project_guide_name,
+				'@project_guide_email' => $project_guide_email_id,
+				'@project_title' => $proposal->project_title ?? '',
+			], $options);
+			break;
+
+		case 'science_and_concept_map_proposal_disapproved':
+			$proposal_id = $params['science_and_concept_map_proposal_disapproved']['proposal_id'] ?? NULL;
+			$proposal = $load_proposal($proposal_id) ?: (object) [];
+			$user = !empty($params['science_and_concept_map_proposal_disapproved']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['science_and_concept_map_proposal_disapproved']['user_id'])
+				: NULL;
+			$project_guide_name = $not_entered($proposal->project_guide_name ?? '');
+			$project_guide_email_id = $not_entered($proposal->project_guide_email_id ?? '');
+			$set_headers($params['science_and_concept_map_proposal_disapproved']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your soul science and concept map project proposal has been disapproved', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nWe regret to inform you that your soul science and concept map Project proposal with following details have been disapproved:\n\nFull Name: @full_name\nEmail: @email\nUniversity/Institute: @university\nCity: @city\nState: @state\nCountry: @country\nTitle of Category: @category\nProject Guide: @project_guide\nProject Guide Email: @project_guide_email\nProject Title: @project_title\n\nReason for rejection: @reason\n\nThank you for participating in the SOUL science and concept map project. You are welcome to submit a new proposal.\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@email' => $user ? $user->getEmail() : '',
+				'@university' => $proposal->university ?? '',
+				'@city' => $proposal->city ?? '',
+				'@state' => $proposal->state ?? '',
+				'@country' => $proposal->country ?? '',
+				'@category' => $proposal->category ?? '',
+				'@project_guide' => $project_guide_name,
+				'@project_guide_email' => $project_guide_email_id,
+				'@project_title' => $proposal->project_title ?? '',
+				'@reason' => $proposal->dissapproval_reason ?? '',
+			], $options);
+			break;
+
+		case 'science_and_concept_map_proposal_approved':
+			$proposal_id = $params['science_and_concept_map_proposal_approved']['proposal_id'] ?? NULL;
+			$proposal = $load_proposal($proposal_id) ?: (object) [];
+			$user = !empty($params['science_and_concept_map_proposal_approved']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['science_and_concept_map_proposal_approved']['user_id'])
+				: NULL;
+			$project_guide_name = $not_entered($proposal->project_guide_name ?? '');
+			$project_guide_email_id = $not_entered($proposal->project_guide_email_id ?? '');
+			$upload_url = 'https://soul.fossee.in/science-and-concept-map-project/abstract-code';
+			$set_headers($params['science_and_concept_map_proposal_approved']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your soul science and concept map project proposal has been approved', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYour soul science and concept map project proposal with the following details has been approved:\n\nFull Name: @full_name\nEmail: @email\nUniversity/Institute: @university\nCity: @city\nState: @state\nCountry: @country\nTitle of Category: @category\nProject Guide: @project_guide\nProject Guide Email: @project_guide_email\nProject Title: @project_title\n\nYou can upload your report and the project files at: @upload_url\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@email' => $user ? $user->getEmail() : '',
+				'@university' => $proposal->university ?? '',
+				'@city' => $proposal->city ?? '',
+				'@state' => $proposal->state ?? '',
+				'@country' => $proposal->country ?? '',
+				'@category' => $proposal->category ?? '',
+				'@project_guide' => $project_guide_name,
+				'@project_guide_email' => $project_guide_email_id,
+				'@project_title' => $proposal->project_title ?? '',
+				'@upload_url' => $upload_url,
+			], $options);
+			break;
+
+		case 'science_and_concept_map_proposal_completed':
+			$proposal_id = $params['science_and_concept_map_proposal_completed']['proposal_id'] ?? NULL;
+			$proposal = $load_proposal($proposal_id) ?: (object) [];
+			$user = !empty($params['science_and_concept_map_proposal_completed']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['science_and_concept_map_proposal_completed']['user_id'])
+				: NULL;
+			$project_guide_name = $not_entered($proposal->project_guide_name ?? '');
+			$project_guide_email_id = $not_entered($proposal->project_guide_email_id ?? '');
+			$completed_url = 'https://soul.fossee.in/science-and-concept-map-project/completed-projects';
+			$set_headers($params['science_and_concept_map_proposal_completed']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your soul science and concept map project proposal has been completed', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYour soul science and concept map project on the following process has been completed successfully.\n\nFull Name: @full_name\nEmail: @email\nUniversity/Institute: @university\nCity: @city\nState: @state\nCountry: @country\nTitle of Category: @category\nProject Guide: @project_guide\nProject Guide Email: @project_guide_email\nProject Title: @project_title\n\nKindly access this link to download the same.\n@completed_url\n\nThank you for participating in the SOUL science and concept map project. You are welcome to propose a new science and concept map project.\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@email' => $user ? $user->getEmail() : '',
+				'@university' => $proposal->university ?? '',
+				'@city' => $proposal->city ?? '',
+				'@state' => $proposal->state ?? '',
+				'@country' => $proposal->country ?? '',
+				'@category' => $proposal->category ?? '',
+				'@project_guide' => $project_guide_name,
+				'@project_guide_email' => $project_guide_email_id,
+				'@project_title' => $proposal->project_title ?? '',
+				'@completed_url' => $completed_url,
+			], $options);
+			break;
+
+		case 'science_and_concept_map_proposal_deleted':
+			$proposal_id = $params['science_and_concept_map_proposal_deleted']['proposal_id'] ?? NULL;
+			$proposal = $load_proposal($proposal_id) ?: (object) [];
+			$user = !empty($params['science_and_concept_map_proposal_deleted']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['science_and_concept_map_proposal_deleted']['user_id'])
+				: NULL;
+			$project_guide_name = $not_entered($proposal->project_guide_name ?? '');
+			$project_guide_email_id = $not_entered($proposal->project_guide_email_id ?? '');
+			$set_headers($params['science_and_concept_map_proposal_deleted']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your soul science and concept map project proposal has been deleted', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nWe regret to inform you that your soul science and concept map project proposal with following details have been deleted.\n\nFull Name: @full_name\nEmail: @email\nUniversity/Institute: @university\nCity: @city\nState: @state\nCountry: @country\nTitle of Category: @category\nProject Guide: @project_guide\nProject Guide Email: @project_guide_email\nProject Title: @project_title\n\nThank you for participating in the SOUL science and concept map project. You are welcome to submit a new proposal.\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@email' => $user ? $user->getEmail() : '',
+				'@university' => $proposal->university ?? '',
+				'@city' => $proposal->city ?? '',
+				'@state' => $proposal->state ?? '',
+				'@country' => $proposal->country ?? '',
+				'@category' => $proposal->category ?? '',
+				'@project_guide' => $project_guide_name,
+				'@project_guide_email' => $project_guide_email_id,
+				'@project_title' => $proposal->project_title ?? '',
+			], $options);
+			break;
+
+		case 'abstract_uploaded':
+			$proposal_id = $params['abstract_uploaded']['proposal_id'] ?? NULL;
+			$proposal = $load_proposal($proposal_id) ?: (object) [];
+			$user = !empty($params['abstract_uploaded']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['abstract_uploaded']['user_id'])
+				: NULL;
+			$set_headers($params['abstract_uploaded']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] You have uploaded soul science and concept map project files', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nWe received your report and project files for the following details:\n\nFull Name: @full_name\nProject Title: @project_title\nTitle of Category: @category\n\nThe report and project files are under review. You will be notified when it has been approved.\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@project_title' => $proposal->project_title ?? '',
+				'@category' => $proposal->category ?? '',
+			], $options);
+			break;
+
+		case 'solution_pending':
+			$solution_id = $params['solution_pending']['solution_id'] ?? NULL;
+			$solution = $load_solution($solution_id) ?: (object) [];
+			$experiment = NULL;
+			$proposal = NULL;
+			if (!empty($solution->experiment_id)) {
+				$experiment = \Drupal::database()->select('soul_science_and_concept_map_experiment', 'e')
+					->fields('e')
+					->condition('id', $solution->experiment_id)
+					->range(0, 1)
+					->execute()
+					->fetchObject();
+			}
+			if (!empty($experiment) && !empty($experiment->proposal_id)) {
+				$proposal = $load_proposal($experiment->proposal_id);
+			}
+			$experiment = $experiment ?: (object) [];
+			$proposal = $proposal ?: (object) [];
+			$user = !empty($params['solution_pending']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['solution_pending']['user_id'])
+				: NULL;
+			$set_headers($params['solution_pending']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your uploaded soul science and concept map solution is pending review', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYour following solution is pending review:\n\nFull Name: @full_name\nProject Title: @project_title\nTitle of Category: @category\nExperiment Title: @experiment_title\nSolution number: @solution_number\nCaption: @solution_caption\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@project_title' => $proposal->project_title ?? '',
+				'@category' => $proposal->category ?? '',
+				'@experiment_title' => $experiment->title ?? '',
+				'@solution_number' => $solution->code_number ?? '',
+				'@solution_caption' => $solution->caption ?? '',
+			], $options);
+			break;
+
+		case 'solution_approved':
+			$solution_id = $params['solution_approved']['solution_id'] ?? NULL;
+			$solution = $load_solution($solution_id) ?: (object) [];
+			$experiment = NULL;
+			$proposal = NULL;
+			if (!empty($solution->experiment_id)) {
+				$experiment = \Drupal::database()->select('soul_science_and_concept_map_experiment', 'e')
+					->fields('e')
+					->condition('id', $solution->experiment_id)
+					->range(0, 1)
+					->execute()
+					->fetchObject();
+			}
+			if (!empty($experiment) && !empty($experiment->proposal_id)) {
+				$proposal = $load_proposal($experiment->proposal_id);
+			}
+			$experiment = $experiment ?: (object) [];
+			$proposal = $proposal ?: (object) [];
+			$user = !empty($params['solution_approved']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['solution_approved']['user_id'])
+				: NULL;
+			$set_headers($params['solution_approved']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your uploaded soul science and concept map solution has been approved', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYour following solution has been approved:\n\nFull Name: @full_name\nProject Title: @project_title\nTitle of Category: @category\nExperiment Title: @experiment_title\nSolution number: @solution_number\nCaption: @solution_caption\n\nPlease ensure that ALL the codes follow guidelines at https://soul.fossee.in/science-and-concept-map-project/submission-guidelines\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@full_name' => trim(($proposal->name_title ?? '') . ' ' . ($proposal->contributor_name ?? '')),
+				'@project_title' => $proposal->project_title ?? '',
+				'@category' => $proposal->category ?? '',
+				'@experiment_title' => $experiment->title ?? '',
+				'@solution_number' => $solution->code_number ?? '',
+				'@solution_caption' => $solution->caption ?? '',
+			], $options);
+			break;
+
+		case 'solution_disapproved':
+			$user = !empty($params['solution_disapproved']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['solution_disapproved']['user_id'])
+				: NULL;
+			$set_headers($params['solution_disapproved']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] Your uploaded soul science-and-concept-map solution has been disapproved', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYour following solution has been disapproved:\n\nExperiment Number: @experiment_number\nExperiment Title: @experiment_title\nSolution number: @solution_number\nCaption: @solution_caption\n\nReason for dis-approval: @reason\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@experiment_number' => $params['solution_disapproved']['experiment_number'] ?? '',
+				'@experiment_title' => $params['solution_disapproved']['experiment_title'] ?? '',
+				'@solution_number' => $params['solution_disapproved']['solution_number'] ?? '',
+				'@solution_caption' => $params['solution_disapproved']['solution_caption'] ?? '',
+				'@reason' => $params['solution_disapproved']['message'] ?? '',
+			], $options);
+			break;
+
+		case 'solution_deleted_user':
+			$user = !empty($params['solution_deleted_user']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['solution_deleted_user']['user_id'])
+				: NULL;
+			$set_headers($params['solution_deleted_user']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] User has deleted the pending soul science-and-concept-map solution', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYour following pending solution has been deleted:\n\nTitle of the project: @lab_title\nTitle of the Experiment: @experiment_title\nSolution number: @solution_number\nCaption: @solution_caption\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@lab_title' => $params['solution_deleted_user']['lab_title'] ?? '',
+				'@experiment_title' => $params['solution_deleted_user']['experiment_title'] ?? '',
+				'@solution_number' => $params['solution_deleted_user']['solution_number'] ?? '',
+				'@solution_caption' => $params['solution_deleted_user']['solution_caption'] ?? '',
+			], $options);
+			break;
+
+		case 'dependency_uploaded':
+			$user = !empty($params['dependency_uploaded']['user_id'])
+				? \Drupal::entityTypeManager()->getStorage('user')->load($params['dependency_uploaded']['user_id'])
+				: NULL;
+			$dependency_files = !empty($params['dependency_uploaded']['dependency_names'])
+				? implode(', ', $params['dependency_uploaded']['dependency_names'])
+				: '';
+			$set_headers($params['dependency_uploaded']['headers'] ?? []);
+
+			$message['subject'] = t('[@site][Science and Concept Map Project] You have uploaded dependency file', ['@site' => $site_name], $options);
+			$message['body'][] = t("Dear @user_name,\n\nYou have uploaded following dependency files: @dependencies\n\nPlease ensure that ALL the codes follow guidelines at https://soul.fossee.in/soul-science-and-concept-map-project/submission-guidelines\n\nBest Wishes,\n@site Team,\nFOSSEE, IIT Bombay", [
+				'@site' => $site_name,
+				'@user_name' => $user ? $user->getDisplayName() : '',
+				'@dependencies' => $dependency_files,
+			], $options);
+			break;
+
+		case 'standard':
+			$standard = $params['standard'] ?? [];
+			if (!empty($standard['headers']) && is_array($standard['headers'])) {
+				$message['headers'] = $standard['headers'] + $message['headers'];
+			}
+			if (!empty($standard['subject'])) {
+				$message['subject'] = $standard['subject'];
+			}
+			if (!empty($standard['body'])) {
+				$message['body'] = is_array($standard['body']) ? $standard['body'] : array($standard['body']);
+			}
+			break;
+
+		default:
+			if (!empty($params['standard'])) {
+				$standard = $params['standard'];
+				if (!empty($standard['headers']) && is_array($standard['headers'])) {
+					$message['headers'] = $standard['headers'] + $message['headers'];
+				}
+				if (!empty($standard['subject'])) {
+					$message['subject'] = $standard['subject'];
+				}
+				if (!empty($standard['body'])) {
+					$message['body'] = is_array($standard['body']) ? $standard['body'] : array($standard['body']);
+				}
+			}
+			break;
 	}
 }
 

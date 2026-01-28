@@ -256,10 +256,10 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
   $solution_prove_user_data = \Drupal::entityTypeManager()->getStorage('user')->load($proposal_data->solution_provider_uid);
 
   // Config replacements for variable_get().
-  $config = \Drupal::config('soul_science_and_concept_map.settings');
-  $from = $config->get('from_email') ?: '';
-  $bcc = $config->get('emails') ?: '';
-  $cc  = $config->get('cc_emails') ?: '';
+  $config = \Drupal::config('science_and_concept_map.settings');
+  $from = $config->get('science_and_concept_map_from_email') ?: '';
+  $bcc = $config->get('science_and_concept_map_emails') ?: '';
+  $cc  = $config->get('science_and_concept_map_cc_emails') ?: '';
 
   // Language replacement for language_default().
   $langcode = \Drupal::languageManager()->getDefaultLanguage()->getId();
@@ -290,7 +290,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
       'Cc' => $cc,
       'Bcc' => $bcc,
     ];
-    $result = $mail_manager->mail('soul_science_and_concept_map', 'solution_pending', $email_to, $langcode, $params, $from, TRUE);
+    $result = $mail_manager->mail('science_and_concept_map', 'solution_pending', $email_to, $langcode, $params, $from, TRUE);
     if (empty($result) || (isset($result['result']) && !$result['result'])) {
       \Drupal::messenger()->addError('Error sending email message.');
     }
@@ -319,7 +319,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
         'Cc' => $cc,
         'Bcc' => $bcc,
       ];
-      $result = $mail_manager->mail('soul_science_and_concept_map', 'solution_approved', $email_to, $langcode, $params, $from, TRUE);
+      $result = $mail_manager->mail('science_and_concept_map', 'solution_approved', $email_to, $langcode, $params, $from, TRUE);
       if (empty($result) || (isset($result['result']) && !$result['result'])) {
         \Drupal::messenger()->addError('Error sending email message.');
       }
@@ -345,7 +345,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
             'Cc' => $cc,
             'Bcc' => $bcc,
           ];
-          $result = $mail_manager->mail('soul_science_and_concept_map', 'solution_disapproved', $email_to, $langcode, $params, $from, TRUE);
+          $result = $mail_manager->mail('science_and_concept_map', 'solution_disapproved', $email_to, $langcode, $params, $from, TRUE);
           if (empty($result) || (isset($result['result']) && !$result['result'])) {
             \Drupal::messenger()->addError('Error sending email message.');
           }
