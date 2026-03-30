@@ -139,7 +139,7 @@ if ($proposal_data) {
     $form['contributor_name'] = [
       '#type' => 'textfield',
       '#title' => t('Name of the contributor'),
-      '#size' => 250,
+      //'#size' => 250,
       '#attributes' => [
         'placeholder' => t('Enter your full name.....')
         ],
@@ -149,14 +149,14 @@ if ($proposal_data) {
     $form['contributor_email_id'] = [
       '#type' => 'textfield',
       '#title' => t('Email'),
-      '#size' => 30,
+      //'#size' => 30,
       '#value' => $user ? $user->getEmail() : '',
       '#disabled' => TRUE,
     ];
     $form['contributor_contact_no'] = [
       '#type' => 'textfield',
       '#title' => t('Contact No.'),
-      '#size' => 10,
+      //'#size' => 10,
       '#attributes' => [
         'placeholder' => t('Enter your contact number')
         ],
@@ -165,7 +165,7 @@ if ($proposal_data) {
     $form['university'] = [
       '#type' => 'textfield',
       '#title' => t('School/Institute/University/Organisation'),
-      '#size' => 80,
+      //'#size' => 80,
       '#maxlength' => 200,
       '#attributes' => [
         'placeholder' => 'Enter full name of your School/Institute/University/Organisation.... '
@@ -175,7 +175,7 @@ if ($proposal_data) {
     $form['department'] = [
       '#type' => 'textfield',
       '#title' => t('Department/Branch'),
-      '#size' => 80,
+      //'#size' => 80,
       '#maxlength' => 200,
       '#attributes' => [
         'placeholder' => 'Enter Department/Branch.... '
@@ -195,7 +195,7 @@ if ($proposal_data) {
     $form['other_country'] = [
       '#type' => 'textfield',
       '#title' => t('Other than India'),
-      '#size' => 100,
+      //'#size' => 100,
       '#attributes' => [
         'placeholder' => t('Enter your country name')
         ],
@@ -210,7 +210,7 @@ if ($proposal_data) {
     $form['other_state'] = [
       '#type' => 'textfield',
       '#title' => t('State other than India'),
-      '#size' => 100,
+      //'#size' => 100,
       '#attributes' => [
         'placeholder' => t('Enter your state/region name')
         ],
@@ -225,7 +225,7 @@ if ($proposal_data) {
     $form['other_city'] = [
       '#type' => 'textfield',
       '#title' => t('City other than India'),
-      '#size' => 100,
+      //'#size' => 100,
       '#attributes' => [
         'placeholder' => t('Enter your city name')
         ],
@@ -268,7 +268,7 @@ if ($proposal_data) {
       '#attributes' => [
         'placeholder' => t('Enter Pincode')
         ],
-      '#size' => 6,
+      //'#size' => 6,
     ];
     /***************************************************************************/
     $form['hr'] = [
@@ -278,7 +278,7 @@ if ($proposal_data) {
     $form['project_guide_name'] = [
       '#type' => 'textfield',
       '#title' => t('Name of the faculty member of your Institution, if any, who helped you with this project '),
-      '#size' => 250,
+      //'#size' => 250,
       '#attributes' => [
         'placeholder' => t('Enter full name of faculty member')
         ],
@@ -287,7 +287,7 @@ if ($proposal_data) {
     $form['project_guide_department'] = [
       '#type' => 'textfield',
       '#title' => t('Department of the faculty member of your Institution, if any, who helped you with this project '),
-      '#size' => 250,
+      //'#size' => 250,
       '#attributes' => [
         'placeholder' => t('Enter department name of faculty member')
         ],
@@ -296,7 +296,7 @@ if ($proposal_data) {
     $form['project_guide_university'] = [
       '#type' => 'textfield',
       '#title' => t('Enter University name of faculty member'),
-      '#size' => 80,
+      //'#size' => 80,
       '#maxlength' => 200,
       '#attributes' => [
         'placeholder' => 'Enter University name of faculty member'
@@ -305,7 +305,7 @@ if ($proposal_data) {
     $form['project_guide_email_id'] = [
       '#type' => 'textfield',
       '#title' => t('Email id of the faculty member of your Institution, if any, who helped you with this project'),
-      '#size' => 30,
+      //'#size' => 30,
       '#attributes' => [
         'placeholder' => t('Enter Email id of the faculty member')
         ],
@@ -417,7 +417,7 @@ if ($proposal_data) {
   $form['other_software_version_no'] = [
     '#type' => 'textfield',
     '#title' => $this->t('Enter your answer'),
-    '#size' => 100,
+    //'#size' => 100,
     '#attributes' => [
       'placeholder' => $this->t('Enter your answer'),
     ],
@@ -463,7 +463,7 @@ if ($proposal_data) {
     $form['preference1']['book1'] = [
       '#type' => 'textfield',
       '#title' => t('Title of the book'),
-      '#size' => 30,
+      //'#size' => 30,
       '#maxlength' => 100,
       '#states' => [
     'required' => [
@@ -475,7 +475,7 @@ if ($proposal_data) {
     $form['preference1']['author1'] = [
       '#type' => 'textfield',
       '#title' => t('Author Name'),
-      '#size' => 30,
+      //'#size' => 30,
       '#maxlength' => 100,
       // '#required' => TRUE
       //'#value' => $row1->author,
@@ -484,7 +484,7 @@ if ($proposal_data) {
     $form['preference1']['isbn1'] = [
       '#type' => 'textfield',
       '#title' => t('ISBN No'),
-      '#size' => 30,
+      //'#size' => 30,
       '#maxlength' => 25,
       '#states' => [
     'required' => [
@@ -499,7 +499,7 @@ if ($proposal_data) {
     $form['preference1']['publisher1'] = [
       '#type' => 'textfield',
       '#title' => t('Publisher & Place'),
-      '#size' => 30,
+      //'#size' => 30,
       '#maxlength' => 50,
       '#states' => [
     'required' => [
@@ -513,7 +513,7 @@ if ($proposal_data) {
     $form['preference1']['edition1'] = [
       '#type' => 'textfield',
       '#title' => t('Edition'),
-      '#size' => 4,
+      //'#size' => 4,
       '#maxlength' => 2,
       '#states' => [
     'required' => [
@@ -527,7 +527,7 @@ if ($proposal_data) {
     $form['preference1']['book_year'] = [
       '#type' => 'textfield',
       '#title' => t('Year of publication'),
-      '#size' => 4,
+      //'#size' => 4,
       '#maxlength' => 4,
       '#states' => [
     'required' => [
@@ -552,7 +552,7 @@ if ($proposal_data) {
     $form['project_title'] = [
       '#type' => 'textfield',
       '#title' => t('Project Title'),
-      '#size' => 100,
+      //'#size' => 100,
       '#maxlength' => 250,
       '#description' => t('Minimum character limit is 10 and Maximum character limit is 250'),
       '#attributes' => [
@@ -563,7 +563,7 @@ if ($proposal_data) {
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => t('Project Description'),
-      '#size' => 250,
+      //'#size' => 250,
       '#attributes' => [
         'placeholder' => t('Enter Project Description')
         ],
@@ -579,14 +579,14 @@ if ($proposal_data) {
     $form['samplefile']['abstractfilepath'] = [
       '#type' => 'file',
       //'#title' => t('Upload circuit diagram'),
-		'#size' => 48,
+		//'#size' => 48,
       '#description' => t('Upload filenames with allowed extensions only. No spaces or any special characters allowed in filename.') . '<br />' . t('<span style="color:red;">Allowed file extensions : ') . \Drupal::config('science_and_concept_map.settings')->get('science_and_concept_map_abstract_upload_extensions') . '</span>',
     ];
     $form['reference'] = [
       '#type' => 'textfield',
       '#description' => t('The links to the documents or websites which are referenced while proposing this project.'),
       '#title' => t('Reference'),
-      '#size' => 250,
+      //'#size' => 250,
       '#required' => TRUE,
       '#attributes' => [
         'placeholder' => 'Enter reference'
